@@ -1,8 +1,8 @@
 {
   "name": "flock",
   "productName": "Flock",
-  "version": "1.0.0",
-  "description": "Flock — run a whole flock of terminals side by side in one window. Rename and describe each pen, resize or reorder them, switch between a compact scrolling layout and a fixed grid, and theme it your way.",
+  "version": "1.0.1",
+  "description": "Flock: run a whole flock of terminals side by side in one window. Rename each pen, resize or reorder them, switch between a compact scrolling layout and a fixed grid, and theme it your way.",
   "keywords": [
     "terminal",
     "electron",
@@ -15,13 +15,58 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "dist": "electron-builder --mac",
     "postinstall": "electron-rebuild -f -w node-pty"
+  },
+  "build": {
+    "appId": "com.bethandutton.flock",
+    "productName": "Flock",
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "assets/icon.icns",
+      "identity": null,
+      "target": [
+        "dmg"
+      ],
+      "artifactName": "${productName}-${version}.${ext}"
+    },
+    "dmg": {
+      "background": "assets/dmg-background.png",
+      "window": {
+        "width": 540,
+        "height": 380
+      },
+      "iconSize": 96,
+      "contents": [
+        {
+          "x": 130,
+          "y": 242,
+          "type": "file"
+        },
+        {
+          "x": 410,
+          "y": 242,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer.js",
+      "index.html",
+      "styles.css",
+      "assets/icon.png",
+      "assets/icon.icns"
+    ]
   },
   "author": "Bethan Dutton",
   "license": "MIT",
   "devDependencies": {
     "@electron/rebuild": "^3.7.1",
-    "electron": "^33.2.1"
+    "electron": "^33.2.1",
+    "electron-builder": "^26.15.3"
   },
   "dependencies": {
     "@xterm/addon-fit": "^0.10.0",
