@@ -1,0 +1,734 @@
+/* Theme contract — every colour the app uses is a variable so a theme can
+   redefine all of it (including hover/active states). Defaults = Dark. */
+:root {
+  --bg: #1d2725;
+  --bar-bg: #26302d;
+  --pen-header: #26302d;
+  --pen-header-active: #2f3a37;
+  --text: #c6ccc9;
+  --text-muted: #7c857f;
+  --border: #131b19;
+  --hover: #38423f;
+
+  --accent: #b5bd68;
+  --accent-hover: #c6cd82;
+  --accent-active: #9aa257;
+  --accent-text: #12201d;
+
+  --secondary-bg: #38423f;
+  --secondary-hover: #434e4a;
+  --secondary-active: #2c3633;
+
+  --resizer: var(--accent);
+  --scrollbar: #434e4a;
+
+  --panel-bg: #26302d;
+  --panel-border: #3a4441;
+  --input-bg: #1d2725;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  user-select: none;
+}
+
+/* Buttons reused in the welcome screen, empty cells and add menu */
+.topbar-btn {
+  -webkit-app-region: no-drag;
+  height: 26px;
+  margin-left: 8px;
+  padding: 0 12px;
+  border: none;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 7px;
+  cursor: default;
+}
+
+.topbar-btn:hover {
+  background: var(--accent-hover);
+}
+
+.topbar-btn:active {
+  background: var(--accent-active);
+}
+
+.topbar-btn.secondary {
+  background: var(--secondary-bg);
+  color: var(--text);
+}
+
+.topbar-btn.secondary:hover {
+  background: var(--secondary-hover);
+}
+
+.topbar-btn.secondary:active {
+  background: var(--secondary-active);
+}
+
+/* --- Field: all pens side by side, horizontal scroll --- */
+#field {
+  position: relative;
+  display: flex;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+#field::-webkit-scrollbar {
+  height: 10px;
+}
+
+#field::-webkit-scrollbar-thumb {
+  background: var(--scrollbar);
+  border-radius: 5px;
+}
+
+/* --- A pen (one terminal) --- */
+.pen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  width: 380px;
+  min-width: 240px;
+  height: 100%;
+  border-right: 1px solid var(--border);
+}
+
+/* The header row is the window's titlebar: draggable, with interactive
+   bits (title, close) opting out so they stay clickable. */
+.pen-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 8px 0 12px;
+  background: var(--pen-header);
+  cursor: default;
+  -webkit-app-region: drag;
+}
+
+.pen.focused .pen-header {
+  background: var(--pen-header-active);
+}
+
+/* The first pen is inset to clear the macOS traffic lights */
+.pen.is-first .pen-header {
+  padding-left: 84px;
+}
+
+.pen-titles {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+}
+
+.pen-title {
+  -webkit-app-region: no-drag;
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pen-title.editing {
+  user-select: text;
+  cursor: text;
+  outline: none;
+  background: var(--input-bg);
+  border-radius: 4px;
+  padding: 0 4px;
+  margin: 0 -4px;
+}
+
+.pen-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.pen-desc:empty {
+  display: none;
+}
+
+.pen-close {
+  -webkit-app-region: no-drag;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--text-muted);
+  opacity: 0;
+  flex-shrink: 0;
+}
+
+.pen-header:hover .pen-close {
+  opacity: 0.8;
+}
+
+.pen-close:hover {
+  background: var(--hover);
+  color: var(--text);
+  opacity: 1;
+}
+
+.pen-term {
+  flex: 1;
+  min-height: 0;
+  padding: 8px 10px;
+  background: var(--bg);
+}
+
+.pen-term .xterm {
+  height: 100%;
+}
+
+.pen-resizer {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 5;
+}
+
+.pen-resizer:hover,
+.pen-resizer.dragging {
+  background: var(--resizer);
+}
+
+/* --- Welcome (shown when the field is empty) --- */
+#welcome {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+  padding: 24px;
+  -webkit-app-region: drag;
+}
+
+#welcome.hidden {
+  display: none;
+}
+
+.welcome-avatar {
+  width: 132px;
+  height: 132px;
+  border-radius: 26px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+}
+
+#welcome h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+#welcome p {
+  max-width: 380px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.welcome-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.welcome-actions .topbar-btn {
+  height: 32px;
+  margin-left: 0;
+  padding: 0 16px;
+}
+
+/* --- Shared panel styling (editor + preferences) --- */
+.editor,
+.prefs {
+  -webkit-app-region: no-drag;
+  position: fixed;
+  z-index: 100;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.editor {
+  width: 260px;
+  padding: 12px;
+}
+
+.editor.hidden,
+.prefs.hidden {
+  display: none;
+}
+
+.editor-field {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.editor-field span {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.editor-field input,
+.editor-field textarea {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--input-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  resize: none;
+  user-select: text;
+}
+
+.editor-field input:focus,
+.editor-field textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.editor-actions button {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-family: inherit;
+  border: none;
+  border-radius: 6px;
+  cursor: default;
+  color: var(--text);
+  background: var(--secondary-bg);
+}
+
+.editor-actions button:hover {
+  background: var(--secondary-hover);
+}
+
+#editor-save {
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+#editor-save:hover {
+  background: var(--accent-hover);
+}
+
+/* --- Preferences panel --- */
+.prefs {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 420px;
+  max-width: calc(100vw - 40px);
+  padding: 20px;
+}
+
+.prefs h2 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.prefs .prefs-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.theme-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 2px solid var(--panel-border);
+  border-radius: 10px;
+  cursor: default;
+}
+
+.theme-card:hover {
+  border-color: var(--text-muted);
+}
+
+.theme-card.selected {
+  border-color: var(--accent);
+}
+
+.theme-swatch {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  overflow: hidden;
+}
+
+.theme-swatch span {
+  flex: 1;
+}
+
+.theme-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.custom-fields {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--panel-border);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.custom-fields.hidden {
+  display: none;
+}
+
+.custom-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.custom-field input[type="color"] {
+  width: 40px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  background: none;
+  cursor: default;
+}
+
+.prefs-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+#prefs-done {
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  border-radius: 7px;
+  background: var(--accent);
+  color: var(--accent-text);
+  cursor: default;
+}
+
+#prefs-done:hover {
+  background: var(--accent-hover);
+}
+
+.pen-term,
+.xterm {
+  user-select: text;
+}
+
+/* --- Activity bar --- */
+.pen-status {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-family: "JetBrains Mono", Menlo, monospace;
+  color: var(--text-muted);
+  background: var(--pen-header);
+  border-top: 1px solid var(--border);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pen-status.hidden {
+  display: none;
+}
+
+/* --- Reorder drag --- */
+.pen.dragging {
+  opacity: 0.6;
+}
+
+/* --- Fixed grid layout --- */
+#field.mode-fixed {
+  display: grid;
+  gap: 1px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+#field.mode-fixed .pen {
+  width: auto !important;
+  min-width: 0;
+  height: 100%;
+  border-right: none;
+}
+
+#field.mode-fixed .pen-resizer {
+  display: none;
+}
+
+.cell {
+  position: relative;
+  display: flex;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.cell > .pen {
+  flex: 1;
+}
+
+.cell-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.cell-empty .topbar-btn {
+  margin-left: 0;
+  height: 30px;
+  padding: 0 18px;
+}
+
+/* --- Preferences: layout + general --- */
+.prefs-sub-spaced {
+  margin-top: 18px;
+}
+
+.layout-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.layout-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 10px 12px;
+  text-align: left;
+  border: 2px solid var(--panel-border);
+  border-radius: 10px;
+  background: none;
+  color: var(--text);
+  cursor: default;
+  font-family: inherit;
+}
+
+.layout-opt:hover {
+  border-color: var(--text-muted);
+}
+
+.layout-opt.selected {
+  border-color: var(--accent);
+}
+
+.layout-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.layout-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.grid-size {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.grid-size.hidden {
+  display: none;
+}
+
+.grid-size select,
+#font-choice {
+  padding: 4px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--input-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.toggle-label {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.toggle-label small {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* --- Add button: a slim strip after the last column --- */
+#add {
+  position: relative;
+  flex: 1 0 46px;
+  min-width: 46px;
+  height: 100%;
+  -webkit-app-region: drag;
+}
+
+#add-btn {
+  -webkit-app-region: no-drag;
+  margin: 5px 0 0 4px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 7px;
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: default;
+}
+
+#add-btn:hover {
+  color: var(--text);
+  box-shadow: inset 0 0 0 999px rgba(0, 0, 0, 0.18);
+}
+
+#add-btn:active {
+  box-shadow: inset 0 0 0 999px rgba(0, 0, 0, 0.3);
+}
+
+/* --- Shared dropdown / context menu --- */
+.menu {
+  -webkit-app-region: no-drag;
+  min-width: 150px;
+  padding: 4px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 9px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.menu.hidden {
+  display: none;
+}
+
+.menu button {
+  padding: 7px 10px;
+  text-align: left;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  border-radius: 6px;
+  cursor: default;
+}
+
+.menu button:hover {
+  background: var(--hover);
+}
+
+#add-menu {
+  position: absolute;
+  top: 38px;
+  left: 4px;
+  z-index: 60;
+}
+
+#ctx-menu {
+  position: fixed;
+  z-index: 120;
+}
+
+/* Fixed grid: first cell inset for the traffic lights; empty cells are
+   draggable so the window can still be moved. */
+#field.mode-fixed .cell:first-child .pen-header {
+  padding-left: 84px;
+}
+
+#field.mode-fixed .cell:first-child .cell-empty {
+  padding-left: 74px;
+}
+
+.cell-empty {
+  -webkit-app-region: drag;
+}
+
+.cell-empty .topbar-btn {
+  -webkit-app-region: no-drag;
+}
