@@ -31,7 +31,7 @@
       "artifactName": "${productName}-${version}.${ext}"
     },
     "dmg": {
-      "background": "assets/dmg-background.png",
+      "background": "assets/dmg-background.tiff",
       "window": {
         "width": 540,
         "height": 380
