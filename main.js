@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, nativeImage, dialog, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, nativeImage, dialog, Menu, net, shell } = require('electron');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
@@ -180,6 +180,42 @@ function sampleStats() {
   });
 }
 
+/* ----------------------------- Update check ----------------------------- */
+
+const UPDATE_REPO = 'bethandutton/flock';
+
+function isNewer(a, b) {
+  const x = String(a).replace(/^v/, '').split('.').map((n) => parseInt(n, 10) || 0);
+  const y = String(b).replace(/^v/, '').split('.').map((n) => parseInt(n, 10) || 0);
+  for (let i = 0; i < 3; i++) {
+    if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
+  }
+  return false;
+}
+
+async function checkForUpdates() {
+  if (!mainWindow) return;
+  try {
+    const res = await net.fetch(`https://api.github.com/repos/${UPDATE_REPO}/releases/latest`);
+    if (!res.ok) return;
+    const release = await res.json();
+    if (release.tag_name && isNewer(release.tag_name, app.getVersion())) {
+      mainWindow.webContents.send('update-available', {
+        version: release.tag_name.replace(/^v/, ''),
+        url: release.html_url,
+      });
+    }
+  } catch (_) {
+    // offline or rate-limited — try again next interval
+  }
+}
+
+ipcMain.on('open-update', (event, url) => {
+  if (typeof url === 'string' && url.startsWith(`https://github.com/${UPDATE_REPO}/`)) {
+    shell.openExternal(url);
+  }
+});
+
 /* -------------------------------- Boot ---------------------------------- */
 
 app.whenReady().then(() => {
@@ -190,6 +226,8 @@ app.whenReady().then(() => {
   buildMenu();
   createWindow();
   setInterval(sampleStats, 2000);
+  setTimeout(checkForUpdates, 5000);
+  setInterval(checkForUpdates, 4 * 60 * 60 * 1000);
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });

@@ -12,4 +12,6 @@ contextBridge.exposeInMainWorld('flock', {
   getPrefs: () => ipcRenderer.invoke('get-prefs'),
   savePrefs: (prefs) => ipcRenderer.send('save-prefs', prefs),
   onOpenPreferences: (handler) => ipcRenderer.on('open-preferences', () => handler()),
+  onUpdateAvailable: (handler) => ipcRenderer.on('update-available', (_e, payload) => handler(payload)),
+  openUpdate: (url) => ipcRenderer.send('open-update', url),
 });

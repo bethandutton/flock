@@ -622,6 +622,24 @@ window.addEventListener('keydown', (e) => {
 });
 window.addEventListener('resize', () => requestAnimationFrame(refitAll));
 
+/* ----------------------------- Update banner ---------------------------- */
+
+const updateBanner = document.getElementById('update-banner');
+const updateText = document.getElementById('update-text');
+let updateUrl = null;
+
+window.flock.onUpdateAvailable(({ version, url }) => {
+  updateUrl = url;
+  updateText.textContent = `Flock ${version} is available`;
+  updateBanner.classList.remove('hidden');
+});
+document.getElementById('update-get').addEventListener('click', () => {
+  if (updateUrl) window.flock.openUpdate(updateUrl);
+});
+document.getElementById('update-dismiss').addEventListener('click', () => {
+  updateBanner.classList.add('hidden');
+});
+
 /* ------------------------------- Startup -------------------------------- */
 
 (async function init() {

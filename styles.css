@@ -484,6 +484,64 @@ body {
   user-select: text;
 }
 
+/* --- Update banner --- */
+#update-banner {
+  -webkit-app-region: no-drag;
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  font-size: 13px;
+  color: var(--text);
+}
+
+#update-banner.hidden {
+  display: none;
+}
+
+#update-get {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--accent-text);
+  cursor: default;
+}
+
+#update-get:hover {
+  background: var(--accent-hover);
+}
+
+#update-get:active {
+  background: var(--accent-active);
+}
+
+#update-dismiss {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  border-radius: 4px;
+  padding: 3px 6px;
+  cursor: default;
+}
+
+#update-dismiss:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
 /* --- Activity bar --- */
 .pen-status {
   flex-shrink: 0;
