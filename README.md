@@ -19,6 +19,12 @@ Flock is a small macOS terminal app for people who like to keep several shells i
 - 📊 **Optional activity bar** — per-terminal CPU and memory, tucked under each pen.
 - 🗂️ **Open Folder** — start a terminal already sitting in the directory you care about.
 
+## Install
+
+**[⬇ Download the latest release](https://github.com/bethandutton/flock/releases/latest)** — grab the `.dmg`, open it and drag Flock into your Applications folder. Built for Apple Silicon Macs.
+
+> **First launch:** Flock isn't code-signed yet, so macOS will warn you the first time. Right-click the app → **Open** → **Open**, and it'll behave normally from then on.
+
 ## Keyboard shortcuts
 
 | Shortcut | Action |
@@ -54,7 +60,7 @@ Pull requests that respect the pasture are very welcome.
 
 ## Contributing
 
-Flock is deliberately small: vanilla JavaScript, no framework, no build step. Have a read of [CLAUDE.md](CLAUDE.md) for the architecture tour and conventions before diving in.
+Flock is deliberately small: vanilla JavaScript, no framework, no build step. The layout is simple — `main.js` runs the shells, `renderer.js` draws the pens, `styles.css` holds every theme variable. Wander in, keep it sheep-themed, and pull requests are very welcome.
 
 ## Licence
 

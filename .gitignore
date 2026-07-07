@@ -18,6 +18,7 @@ yarn-error.log*
 # Personal working notes (not for the public repo)
 TODO.local.md
 *.local.md
+CLAUDE.md
 .claude/settings.local.json
 
 # Editor / OS
