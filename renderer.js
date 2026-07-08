@@ -733,12 +733,24 @@ window.addEventListener('resize', () => requestAnimationFrame(refitAll));
 
 const updateBanner = document.getElementById('update-banner');
 const updateText = document.getElementById('update-text');
+const updateGetBtn = document.getElementById('update-get');
 let updateUrl = null;
+let updateHideTimer = null;
 
 window.flock.onUpdateAvailable(({ version, url }) => {
+  if (updateHideTimer) { clearTimeout(updateHideTimer); updateHideTimer = null; }
   updateUrl = url;
   updateText.textContent = `Flock ${version} is available`;
+  updateGetBtn.classList.remove('hidden');
   updateBanner.classList.remove('hidden');
+});
+
+window.flock.onUpdateNone(({ version, offline }) => {
+  if (updateHideTimer) clearTimeout(updateHideTimer);
+  updateText.textContent = offline ? 'Couldn’t check for updates — are you online?' : `You’re up to date (Flock ${version})`;
+  updateGetBtn.classList.add('hidden');
+  updateBanner.classList.remove('hidden');
+  updateHideTimer = setTimeout(() => updateBanner.classList.add('hidden'), 5000);
 });
 document.getElementById('update-get').addEventListener('click', () => {
   if (updateUrl) window.flock.openUpdate(updateUrl);

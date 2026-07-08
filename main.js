@@ -47,6 +47,10 @@ function buildMenu() {
       label: 'Flock',
       submenu: [
         { role: 'about' },
+        {
+          label: 'Check for Updates…',
+          click: () => checkForUpdates(true),
+        },
         { type: 'separator' },
         {
           label: 'Preferences…',
@@ -248,7 +252,9 @@ function isNewer(a, b) {
   return false;
 }
 
-async function checkForUpdates() {
+/* Automatic checks stay silent unless there's news; a manual check (from the
+   menu) always answers, even when already up to date or offline. */
+async function checkForUpdates(manual = false) {
   if (!mainWindow) return;
   try {
     const res = await net.fetch(`https://api.github.com/repos/${UPDATE_REPO}/releases/latest`);
@@ -259,9 +265,12 @@ async function checkForUpdates() {
         version: release.tag_name.replace(/^v/, ''),
         url: release.html_url,
       });
+    } else if (manual) {
+      mainWindow.webContents.send('update-none', { version: app.getVersion() });
     }
   } catch (_) {
-    // offline or rate-limited — try again next interval
+    // offline or rate-limited — the next automatic interval will retry
+    if (manual && mainWindow) mainWindow.webContents.send('update-none', { version: app.getVersion(), offline: true });
   }
 }
 

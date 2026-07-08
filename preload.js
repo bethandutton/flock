@@ -13,6 +13,10 @@ contextBridge.exposeInMainWorld('flock', {
   getPrefs: () => ipcRenderer.invoke('get-prefs'),
   savePrefs: (prefs) => ipcRenderer.send('save-prefs', prefs),
   onOpenPreferences: (handler) => ipcRenderer.on('open-preferences', () => handler()),
+  onFocusMode: (handler) => ipcRenderer.on('focus-mode', (_e, on) => handler(on)),
+  onFlushPrefs: (handler) => ipcRenderer.on('flush-prefs', () => handler()),
+  onPrefsChanged: (handler) => ipcRenderer.on('prefs-changed', (_e, payload) => handler(payload)),
   onUpdateAvailable: (handler) => ipcRenderer.on('update-available', (_e, payload) => handler(payload)),
+  onUpdateNone: (handler) => ipcRenderer.on('update-none', (_e, payload) => handler(payload)),
   openUpdate: (url) => ipcRenderer.send('open-update', url),
 });

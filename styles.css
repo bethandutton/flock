@@ -574,6 +574,10 @@ body {
   display: none;
 }
 
+#update-get.hidden {
+  display: none;
+}
+
 #update-get {
   padding: 5px 12px;
   font-size: 12px;
