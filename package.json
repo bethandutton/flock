@@ -1,7 +1,7 @@
 {
   "name": "flock",
   "productName": "Flock",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Flock: run a whole flock of terminals side by side in one window. Rename each pen, resize or reorder them, switch between a compact scrolling layout and a fixed grid, and theme it your way.",
   "keywords": [
     "terminal",
