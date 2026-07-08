@@ -274,6 +274,7 @@ function makePen({ cwd, title } = {}) {
   el.dataset.id = id;
   el.innerHTML = `
     <div class="pen-header">
+      <div class="pen-back" title="Back to Dashboard">←</div>
       <div class="pen-titles"><div class="pen-title">Terminal</div><div class="pen-location"></div></div>
       <div class="pen-close" title="Close (⌘W)">✕</div>
     </div>
@@ -375,6 +376,11 @@ function makePen({ cwd, title } = {}) {
   resizerEl.addEventListener('mousedown', (e) => startResize(e, pen, resizerEl));
 
   el.querySelector('.pen-shade-eye').addEventListener('click', () => setShaded(pen, false));
+  el.querySelector('.pen-back').addEventListener('mousedown', (e) => {
+    e.stopPropagation();
+    dashboardZoom = null;
+    renderField();
+  });
 
   applyActivityVisibility(pen);
   window.flock.createTerminal(id, term.cols || 80, term.rows || 24, cwd);
@@ -417,10 +423,12 @@ function setFocused(id) {
 function markAttention(pen) {
   pen.attention = true;
   pen.headerEl.classList.add('attention');
+  if (pen.cardEl && pen.cardEl.isConnected) pen.cardEl.classList.add('attention');
 }
 function clearAttention(pen) {
   pen.attention = false;
   pen.headerEl.classList.remove('attention');
+  if (pen.cardEl && pen.cardEl.isConnected) pen.cardEl.classList.remove('attention');
 }
 window.addEventListener('focus', () => {
   const pen = pens.get(focusedId);
@@ -554,6 +562,43 @@ function startTitleEdit(pen) {
 
 /* --------------------------- Field rendering ---------------------------- */
 
+/* ------------------------------ Dashboard -------------------------------- */
+
+let dashboardZoom = null;
+let dashTimer = null;
+
+function makeDashCard(pen) {
+  const card = document.createElement('div');
+  card.className = 'cell dash-card';
+  card.innerHTML = `
+    <div class="dash-title"></div>
+    <div class="dash-loc"></div>
+    <div class="dash-status"></div>`;
+  card.classList.toggle('attention', !!pen.attention);
+  card.addEventListener('click', () => {
+    dashboardZoom = pen.id;
+    renderField();
+    requestAnimationFrame(() => pen.term.focus());
+  });
+  card.addEventListener('contextmenu', (e) => { e.preventDefault(); openCtxMenu(pen, e.clientX, e.clientY); });
+  pen.cardEl = card;
+  return card;
+}
+
+function updateDashCards() {
+  const now = performance.now();
+  for (const pen of pens.values()) {
+    if (!pen.cardEl || !pen.cardEl.isConnected) continue;
+    pen.cardEl.querySelector('.dash-title').textContent = pen.titleEl.textContent;
+    pen.cardEl.querySelector('.dash-loc').textContent = pen.locationEl.textContent;
+    const busy = now - (pen.lastData || 0) < 1500;
+    const statusEl = pen.cardEl.querySelector('.dash-status');
+    statusEl.textContent = pen.attention ? 'Needs you' : busy ? 'Working…' : 'Idle';
+    statusEl.className = `dash-status ${pen.attention ? 'st-attention' : busy ? 'st-busy' : 'st-idle'}`;
+    pen.cardEl.classList.toggle('attention', !!pen.attention);
+  }
+}
+
 function makeEmptyCell() {
   const empty = document.createElement('div');
   empty.className = 'cell-empty';
@@ -576,6 +621,9 @@ function renderField() {
   }
   fieldEl.classList.toggle('mode-fixed', prefs.layout === 'fixed');
   fieldEl.classList.toggle('mode-tabs', prefs.layout === 'tabs');
+  fieldEl.classList.toggle('mode-dash', prefs.layout === 'dashboard');
+  if (dashboardZoom && (prefs.layout !== 'dashboard' || !pens.has(dashboardZoom))) dashboardZoom = null;
+  fieldEl.classList.toggle('mode-dash-zoom', prefs.layout === 'dashboard' && !!dashboardZoom);
   tabbarEl.classList.toggle('hidden', prefs.layout !== 'tabs');
   fieldEl.style.gridTemplateColumns = prefs.layout === 'fixed' ? `repeat(${prefs.grid.cols}, 1fr)` : '';
   fieldEl.style.gridTemplateRows = prefs.layout === 'fixed' ? `repeat(${prefs.grid.rows}, 1fr)` : '';
@@ -599,6 +647,27 @@ function renderField() {
     if (!fieldEl.contains(welcomeEl)) fieldEl.appendChild(welcomeEl);
     welcomeEl.classList.toggle('hidden', order.length > 0);
     if (order.length && (!focusedId || !pens.has(focusedId))) setFocused(order[order.length - 1]);
+  } else if (prefs.layout === 'dashboard') {
+    for (const id of order) {
+      const pen = pens.get(id);
+      pen.el.classList.toggle('zoomed', id === dashboardZoom);
+      fieldEl.appendChild(pen.el);
+    }
+    if (dashboardZoom) {
+      setFocused(dashboardZoom);
+    } else if (order.length) {
+      for (const id of order) fieldEl.appendChild(makeDashCard(pens.get(id)));
+      const newCard = document.createElement('div');
+      newCard.className = 'cell dash-card dash-new';
+      newCard.innerHTML = `
+        <button class="topbar-btn dash-new-term" type="button">New</button>
+        <button class="topbar-btn secondary dash-new-open" type="button">Open Folder</button>`;
+      newCard.querySelector('.dash-new-term').addEventListener('click', () => addPen());
+      newCard.querySelector('.dash-new-open').addEventListener('click', () => openFolder());
+      fieldEl.appendChild(newCard);
+    }
+    if (!fieldEl.contains(welcomeEl)) fieldEl.appendChild(welcomeEl);
+    welcomeEl.classList.toggle('hidden', order.length > 0);
   } else {
     if (fieldEl.contains(welcomeEl)) welcomeEl.remove();
     const cap = capacity();
@@ -616,6 +685,9 @@ function renderField() {
   const welcomeVisible = welcomeEl.parentElement && !welcomeEl.classList.contains('hidden');
   if (welcomeVisible) { welcomeVideoEl.play().catch(() => {}); startMatrix(); }
   else { welcomeVideoEl.pause(); stopMatrix(); }
+  const dashCardsVisible = prefs.layout === 'dashboard' && !dashboardZoom && order.length > 0;
+  if (dashCardsVisible) { updateDashCards(); if (!dashTimer) dashTimer = setInterval(updateDashCards, 700); }
+  else if (dashTimer) { clearInterval(dashTimer); dashTimer = null; }
   requestAnimationFrame(refitAll);
 }
 
@@ -782,6 +854,7 @@ showActivityEl.addEventListener('change', () => {
 function setLayout(next) {
   if (prefs.layout === next) return;
   prefs.layout = next;
+  dashboardZoom = null;
   if (next === 'fixed') {
     while (order.length > capacity() && prefs.grid.cols < 5) prefs.grid.cols++;
     while (order.length > capacity() && prefs.grid.rows < 3) prefs.grid.rows++;
@@ -878,6 +951,7 @@ window.addEventListener('keydown', (e) => {
   }
   else if (e.key === 'Escape') {
     if (!prefsEl.classList.contains('hidden')) closePrefs();
+    else if (prefs.layout === 'dashboard' && dashboardZoom) { dashboardZoom = null; renderField(); }
     addMenu.classList.add('hidden');
     closeCtxMenu();
   }
