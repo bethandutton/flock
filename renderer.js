@@ -469,6 +469,7 @@ function startTitleEdit(pen) {
     } else {
       titleEl.textContent = original;
     }
+    titleEl.title = titleEl.textContent;
     pen.term.focus();
   }
   function onKey(e) {

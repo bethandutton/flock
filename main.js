@@ -23,6 +23,9 @@ function createWindow() {
     height: 680,
     minWidth: 480,
     minHeight: 320,
+    // The click that activates the window also lands in the terminal under
+    // the cursor, instead of needing a second click.
+    acceptFirstMouse: true,
     titleBarStyle: 'hiddenInset',
     backgroundColor: '#1e1e1e',
     webPreferences: {
