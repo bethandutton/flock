@@ -235,6 +235,20 @@ function activeThemeObject() {
 function termFont() {
   return `${prefs.fontFamily}, "SF Mono", Menlo, monospace`;
 }
+
+/* Proportional faces sit in the terminal's fixed-width cells, which reads
+   airy: the cell is sized to the widest letter, so most letters swim. Measure
+   the face's average letter width and pull the cells most of the way in. */
+const PROPORTIONAL_FONTS = new Set(['"DM Sans"', '"Inter"']);
+const measureCanvas = document.createElement('canvas');
+function termLetterSpacing(fontSize) {
+  if (!PROPORTIONAL_FONTS.has(prefs.fontFamily)) return 0;
+  const ctx = measureCanvas.getContext('2d');
+  ctx.font = `${fontSize}px ${prefs.fontFamily}`;
+  const wide = ctx.measureText('W').width;
+  const avg = ctx.measureText('abcdefghijklmnopqrstuvwxyzABCDEFO0123456789').width / 43;
+  return -Math.max(0, (wide - avg) * 0.85);
+}
 function capacity() {
   return prefs.grid.rows * prefs.grid.cols;
 }
@@ -247,6 +261,7 @@ function applyTheme() {
   for (const pen of pens.values()) {
     pen.term.options.theme = t.term;
     pen.term.options.fontFamily = termFont();
+    pen.term.options.letterSpacing = termLetterSpacing(pen.fontSize);
   }
   requestAnimationFrame(refitAll);
 }
@@ -300,6 +315,7 @@ function makePen({ cwd, title } = {}) {
   const t = activeThemeObject();
   const term = new Terminal({
     fontFamily: termFont(),
+    letterSpacing: termLetterSpacing(BASE_FONT),
     fontSize: BASE_FONT,
     fontWeight: 400,
     fontWeightBold: 700,
@@ -486,6 +502,7 @@ function adjustFont(delta) {
   if (!pen) return;
   pen.fontSize = Math.max(MIN_FONT, Math.min(MAX_FONT, pen.fontSize + delta));
   pen.term.options.fontSize = pen.fontSize;
+  pen.term.options.letterSpacing = termLetterSpacing(pen.fontSize);
   refit(pen);
 }
 function resetFont() {
@@ -493,6 +510,7 @@ function resetFont() {
   if (!pen) return;
   pen.fontSize = BASE_FONT;
   pen.term.options.fontSize = BASE_FONT;
+  pen.term.options.letterSpacing = termLetterSpacing(BASE_FONT);
   refit(pen);
 }
 
@@ -839,7 +857,10 @@ gridColsEl.addEventListener('change', () => { prefs.grid.cols = +gridColsEl.valu
 
 fontChoiceEl.addEventListener('change', () => {
   prefs.fontFamily = fontChoiceEl.value;
-  for (const pen of pens.values()) pen.term.options.fontFamily = termFont();
+  for (const pen of pens.values()) {
+    pen.term.options.fontFamily = termFont();
+    pen.term.options.letterSpacing = termLetterSpacing(pen.fontSize);
+  }
   requestAnimationFrame(refitAll);
   persist();
 });
