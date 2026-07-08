@@ -910,6 +910,13 @@ body.focus-mode #tabbar .pen-header.busy {
   background: var(--hover);
 }
 
+/* Something rang the bell behind the blur — ring the eye so it's worth a look */
+.pen.shaded.attention .pen-shade-eye {
+  border-color: var(--attention);
+  box-shadow: 0 0 0 1px var(--attention), 0 8px 24px rgba(0, 0, 0, 0.4);
+  color: var(--attention);
+}
+
 /* --- Attention: the terminal bell rang and nobody was looking --- */
 .pen-header.attention .pen-title::before {
   content: '●';

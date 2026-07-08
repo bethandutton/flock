@@ -338,7 +338,8 @@ function makePen({ cwd, title } = {}) {
   term.onBell(() => {
     if (pen.muted) return;
     const away = !document.hasFocus();
-    if (!away && focusedId === id) return;
+    // A shaded pen is hidden behind the blur, so its bell always counts.
+    if (!away && focusedId === id && !pen.shaded) return;
     const firstAlert = !pen.attention;
     markAttention(pen);
     if (away && firstAlert) {
@@ -392,7 +393,11 @@ function makePen({ cwd, title } = {}) {
 function setShaded(pen, on) {
   pen.shaded = on;
   pen.el.classList.toggle('shaded', on);
-  if (!on) requestAnimationFrame(() => pen.term.focus());
+  // Looking back means you've seen whatever rang the bell
+  if (!on) {
+    clearAttention(pen);
+    requestAnimationFrame(() => pen.term.focus());
+  }
 }
 
 function addPen(opts = {}) {
@@ -429,11 +434,13 @@ function setFocused(id) {
 
 function markAttention(pen) {
   pen.attention = true;
+  pen.el.classList.add('attention');
   pen.headerEl.classList.add('attention');
   if (pen.cardEl && pen.cardEl.isConnected) pen.cardEl.classList.add('attention');
 }
 function clearAttention(pen) {
   pen.attention = false;
+  pen.el.classList.remove('attention');
   pen.headerEl.classList.remove('attention');
   if (pen.cardEl && pen.cardEl.isConnected) pen.cardEl.classList.remove('attention');
 }
