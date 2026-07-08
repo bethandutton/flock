@@ -188,6 +188,16 @@ ipcMain.on('pty-kill', (event, { id }) => {
   if (term) { term.kill(); pens.delete(id); }
 });
 
+ipcMain.on('beep', () => shell.beep());
+
+ipcMain.on('focus-window', () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+  }
+});
+
 ipcMain.handle('pick-directory', async (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   const result = await dialog.showOpenDialog(win, {
@@ -304,7 +314,7 @@ async function checkForUpdates(manual = false) {
   if (!mainWindow) return;
   try {
     const res = await net.fetch(`https://api.github.com/repos/${UPDATE_REPO}/releases/latest`);
-    if (!res.ok) return;
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const release = await res.json();
     if (release.tag_name && isNewer(release.tag_name, app.getVersion())) {
       mainWindow.webContents.send('update-available', {

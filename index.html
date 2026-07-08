@@ -16,6 +16,9 @@
     <!-- Right-click a pen header for these -->
     <div id="ctx-menu" class="menu hidden">
       <button data-act="rename" type="button">Rename</button>
+      <button data-act="pin" type="button">Pin</button>
+      <button data-act="shade" type="button">Look Away</button>
+      <button data-act="mute" type="button">Don't Alert Me</button>
       <button data-act="left" type="button">Move Left</button>
       <button data-act="right" type="button">Move Right</button>
       <button data-act="close" type="button">Close</button>
@@ -72,6 +75,10 @@
         <button class="layout-opt" data-layout="fixed" type="button">
           <span class="layout-name">Fixed</span>
           <span class="layout-hint">A fixed grid of areas</span>
+        </button>
+        <button class="layout-opt" data-layout="tabs" type="button">
+          <span class="layout-name">Tabs</span>
+          <span class="layout-hint">One terminal at a time</span>
         </button>
       </div>
       <div class="grid-size hidden" id="grid-size">

@@ -121,7 +121,7 @@ const THEMES = {
       '--text': '#c6ccc9', '--text-muted': '#7c857f', '--border': '#131b19', '--hover': '#38423f',
       '--accent': '#b5bd68', '--accent-hover': '#c6cd82', '--accent-active': '#9aa257', '--accent-text': '#12201d',
       '--secondary-bg': '#38423f', '--secondary-hover': '#434e4a', '--secondary-active': '#2c3633',
-      '--scrollbar': '#434e4a', '--panel-bg': '#26302d', '--panel-border': '#3a4441', '--input-bg': '#1d2725',
+      '--attention': '#8abeb7', '--scrollbar': '#434e4a', '--panel-bg': '#26302d', '--panel-border': '#3a4441', '--input-bg': '#1d2725',
     },
     term: {
       background: '#1d2725', foreground: '#c6ccc9', cursor: '#c6ccc9', cursorAccent: '#1d2725', selectionBackground: '#37413e',
@@ -137,7 +137,7 @@ const THEMES = {
       '--text': '#e6e6e6', '--text-muted': '#8a8a8a', '--border': '#000000', '--hover': '#3a3a3a',
       '--accent': '#2f8f4f', '--accent-hover': '#38a95d', '--accent-active': '#26743f', '--accent-text': '#ffffff',
       '--secondary-bg': '#3a3a3a', '--secondary-hover': '#474747', '--secondary-active': '#2f2f2f',
-      '--scrollbar': '#444444', '--panel-bg': '#2f2f2f', '--panel-border': '#555555', '--input-bg': '#1e1e1e',
+      '--attention': '#5ad4e6', '--scrollbar': '#444444', '--panel-bg': '#2f2f2f', '--panel-border': '#555555', '--input-bg': '#1e1e1e',
     },
     term: { background: '#1e1e1e', foreground: '#e6e6e6', cursor: '#ffffff', cursorAccent: '#1e1e1e', selectionBackground: '#2f6b40', ...ANSI_DARK },
   },
@@ -149,7 +149,7 @@ const THEMES = {
       '--text': '#1e1e1e', '--text-muted': '#767676', '--border': '#d0d0d0', '--hover': '#dcdcdc',
       '--accent': '#2f9e57', '--accent-hover': '#39b365', '--accent-active': '#268a49', '--accent-text': '#ffffff',
       '--secondary-bg': '#dedede', '--secondary-hover': '#d2d2d2', '--secondary-active': '#c8c8c8',
-      '--scrollbar': '#c4c4c4', '--panel-bg': '#f6f6f6', '--panel-border': '#cfcfcf', '--input-bg': '#ffffff',
+      '--attention': '#0e8faf', '--scrollbar': '#c4c4c4', '--panel-bg': '#f6f6f6', '--panel-border': '#cfcfcf', '--input-bg': '#ffffff',
     },
     term: {
       background: '#ffffff', foreground: '#1e1e1e', cursor: '#1e1e1e', cursorAccent: '#ffffff', selectionBackground: '#b8d4f5',
@@ -165,7 +165,7 @@ const THEMES = {
       '--text': '#b7f5c4', '--text-muted': '#5f9c6d', '--border': '#04120a', '--hover': '#1c4527',
       '--accent': '#4fe07a', '--accent-hover': '#6cea92', '--accent-active': '#3fc766', '--accent-text': '#062910',
       '--secondary-bg': '#1c4527', '--secondary-hover': '#245c33', '--secondary-active': '#163a1f',
-      '--scrollbar': '#2a5c38', '--panel-bg': '#0f2a15', '--panel-border': '#245c33', '--input-bg': '#0a1a0d',
+      '--attention': '#4fe0b0', '--scrollbar': '#2a5c38', '--panel-bg': '#0f2a15', '--panel-border': '#245c33', '--input-bg': '#0a1a0d',
     },
     term: {
       background: '#0a1a0d', foreground: '#b7f5c4', cursor: '#4fe07a', cursorAccent: '#0a1a0d', selectionBackground: '#1c6b32',
@@ -181,7 +181,7 @@ const THEMES = {
       '--text': '#ffffff', '--text-muted': '#cccccc', '--border': '#ffffff', '--hover': '#333333',
       '--accent': '#ffff00', '--accent-hover': '#ffff66', '--accent-active': '#e6e600', '--accent-text': '#000000',
       '--secondary-bg': '#1a1a1a', '--secondary-hover': '#333333', '--secondary-active': '#000000',
-      '--scrollbar': '#ffffff', '--panel-bg': '#000000', '--panel-border': '#ffffff', '--input-bg': '#000000',
+      '--attention': '#55ffff', '--scrollbar': '#ffffff', '--panel-bg': '#000000', '--panel-border': '#ffffff', '--input-bg': '#000000',
     },
     term: {
       background: '#000000', foreground: '#ffffff', cursor: '#ffff00', cursorAccent: '#000000', selectionBackground: '#5555ff',
@@ -200,6 +200,7 @@ function customTheme(c) {
       '--text': text, '--text-muted': alpha(text, 0.55), '--border': darken(header, 0.4), '--hover': lighten(header, 0.14),
       '--accent': accent, '--accent-hover': lighten(accent, 0.12), '--accent-active': darken(accent, 0.1), '--accent-text': readableText(accent),
       '--secondary-bg': lighten(header, 0.1), '--secondary-hover': lighten(header, 0.16), '--secondary-active': header,
+      '--attention': '#5ad4e6',
       '--scrollbar': lighten(header, 0.2), '--panel-bg': lighten(bg, 0.06), '--panel-border': lighten(header, 0.2), '--input-bg': darken(bg, 0.06),
     },
     term: { background: bg, foreground: text, cursor: accent, cursorAccent: bg, selectionBackground: alpha(accent, 0.4), ...ANSI_DARK },
@@ -278,6 +279,13 @@ function makePen({ cwd, title } = {}) {
     </div>
     <div class="pen-term"></div>
     <div class="pen-status"></div>
+    <div class="pen-shade">
+      <button class="pen-shade-eye" title="Look back" type="button">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+    </div>
     <div class="pen-resizer"></div>`;
 
   const headerEl = el.querySelector('.pen-header');
@@ -366,9 +374,17 @@ function makePen({ cwd, title } = {}) {
   headerEl.addEventListener('contextmenu', (e) => { e.preventDefault(); openCtxMenu(pen, e.clientX, e.clientY); });
   resizerEl.addEventListener('mousedown', (e) => startResize(e, pen, resizerEl));
 
+  el.querySelector('.pen-shade-eye').addEventListener('click', () => setShaded(pen, false));
+
   applyActivityVisibility(pen);
   window.flock.createTerminal(id, term.cols || 80, term.rows || 24, cwd);
   return pen;
+}
+
+function setShaded(pen, on) {
+  pen.shaded = on;
+  pen.el.classList.toggle('shaded', on);
+  if (!on) requestAnimationFrame(() => pen.term.focus());
 }
 
 function addPen(opts = {}) {
@@ -390,13 +406,66 @@ async function openFolder() {
 function setFocused(id) {
   if (focusedId === id) return;
   focusedId = id;
-  for (const [pid, p] of pens) p.el.classList.toggle('focused', pid === id);
+  for (const [pid, p] of pens) {
+    p.el.classList.toggle('focused', pid === id);
+    p.headerEl.classList.toggle('focused', pid === id);
+  }
+  const pen = pens.get(id);
+  if (pen && document.hasFocus()) clearAttention(pen);
+}
+
+function markAttention(pen) {
+  pen.attention = true;
+  pen.headerEl.classList.add('attention');
+}
+function clearAttention(pen) {
+  pen.attention = false;
+  pen.headerEl.classList.remove('attention');
+}
+window.addEventListener('focus', () => {
+  const pen = pens.get(focusedId);
+  if (pen) clearAttention(pen);
+});
+
+function cycleFocus(dir) {
+  if (!order.length) return;
+  const i = Math.max(0, order.indexOf(focusedId));
+  const next = order[(i + dir + order.length) % order.length];
+  setFocused(next);
+  const pen = pens.get(next);
+  requestAnimationFrame(() => {
+    pen.term.focus();
+    if (prefs.layout === 'compact') pen.el.scrollIntoView({ inline: 'nearest' });
+  });
+}
+
+/* The field's horizontal scrollbar takes real height, and pens sized with
+   height: 100% slide underneath it, hiding the last terminal row. Measure the
+   scrollbar and carve it out of the pens' height instead. */
+function syncScrollbarGutter() {
+  const gutter = prefs.layout === 'compact' ? Math.max(0, fieldEl.offsetHeight - fieldEl.clientHeight) : 0;
+  fieldEl.style.setProperty('--scrollbar-gutter', `${gutter}px`);
 }
 
 function refit(pen) {
+  syncScrollbarGutter();
   if (!pen.el.parentElement) return;
+  /* Size the grid ourselves: the fit addon reads the container's computed
+     height, which under border-box sizing still includes our padding, so it
+     proposes one row too many and the bottom row draws off-screen. */
+  const cs = getComputedStyle(pen.termEl);
+  const w = pen.termEl.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const h = pen.termEl.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+  if (w <= 0 || h <= 0) return;
   try {
-    pen.fit.fit();
+    const cell = pen.term._core._renderService.dimensions.css.cell;
+    if (cell.width && cell.height) {
+      const cols = Math.max(2, Math.floor(w / cell.width));
+      const rows = Math.max(1, Math.floor(h / cell.height));
+      if (cols !== pen.term.cols || rows !== pen.term.rows) pen.term.resize(cols, rows);
+    } else {
+      pen.fit.fit();
+    }
     window.flock.resize(pen.id, pen.term.cols, pen.term.rows);
   } catch (_) { /* pane not measurable yet */ }
 }
@@ -422,8 +491,10 @@ function resetFont() {
 function closePen(id) {
   const pen = pens.get(id);
   if (!pen) return;
+  pen.ro.disconnect();
   window.flock.kill(id);
   pen.term.dispose();
+  pen.headerEl.remove();
   pen.el.remove();
   pens.delete(id);
   order = order.filter((x) => x !== id);
@@ -498,20 +569,38 @@ function renderField() {
   fieldEl.querySelectorAll('.cell').forEach((c) => c.remove());
   for (const pen of pens.values()) if (pen.el.parentElement) pen.el.remove();
   if (addEl.parentElement) addEl.remove();
+  if (tabbarEl.parentElement) tabbarEl.remove();
+  // Tabs mode borrows the pen headers as its tabs — give them back first
+  for (const pen of pens.values()) {
+    if (pen.headerEl.parentElement !== pen.el) pen.el.prepend(pen.headerEl);
+  }
+  fieldEl.classList.toggle('mode-fixed', prefs.layout === 'fixed');
+  fieldEl.classList.toggle('mode-tabs', prefs.layout === 'tabs');
+  tabbarEl.classList.toggle('hidden', prefs.layout !== 'tabs');
+  fieldEl.style.gridTemplateColumns = prefs.layout === 'fixed' ? `repeat(${prefs.grid.cols}, 1fr)` : '';
+  fieldEl.style.gridTemplateRows = prefs.layout === 'fixed' ? `repeat(${prefs.grid.rows}, 1fr)` : '';
 
   if (prefs.layout === 'compact') {
-    fieldEl.classList.remove('mode-fixed');
-    fieldEl.style.gridTemplateColumns = '';
-    fieldEl.style.gridTemplateRows = '';
     for (const id of order) fieldEl.appendChild(pens.get(id).el);
     if (!fieldEl.contains(welcomeEl)) fieldEl.appendChild(welcomeEl);
     welcomeEl.classList.toggle('hidden', order.length > 0);
     if (order.length) fieldEl.appendChild(addEl);
+  } else if (prefs.layout === 'tabs') {
+    // Pinned tabs first (stable within each group), then everything else
+    const tabOrder = [...order].sort((a, b) => (pens.get(b).pinned ? 1 : 0) - (pens.get(a).pinned ? 1 : 0));
+    fieldEl.appendChild(tabbarEl);
+    for (const id of tabOrder) {
+      const pen = pens.get(id);
+      pen.headerEl.classList.toggle('pinned', pen.pinned);
+      tabbarEl.appendChild(pen.headerEl);
+      fieldEl.appendChild(pen.el);
+    }
+    tabbarEl.appendChild(addEl);
+    if (!fieldEl.contains(welcomeEl)) fieldEl.appendChild(welcomeEl);
+    welcomeEl.classList.toggle('hidden', order.length > 0);
+    if (order.length && (!focusedId || !pens.has(focusedId))) setFocused(order[order.length - 1]);
   } else {
-    fieldEl.classList.add('mode-fixed');
     if (fieldEl.contains(welcomeEl)) welcomeEl.remove();
-    fieldEl.style.gridTemplateColumns = `repeat(${prefs.grid.cols}, 1fr)`;
-    fieldEl.style.gridTemplateRows = `repeat(${prefs.grid.rows}, 1fr)`;
     const cap = capacity();
     for (let i = 0; i < cap; i++) {
       const cell = document.createElement('div');
@@ -544,6 +633,11 @@ let ctxPenId = null;
 function openCtxMenu(pen, x, y) {
   ctxPenId = pen.id;
   setFocused(pen.id);
+  const pinBtn = ctxMenu.querySelector('[data-act="pin"]');
+  pinBtn.classList.toggle('hidden', prefs.layout !== 'tabs');
+  pinBtn.textContent = pen.pinned ? 'Unpin' : 'Pin';
+  ctxMenu.querySelector('[data-act="shade"]').textContent = pen.shaded ? 'Look Back' : 'Look Away';
+  ctxMenu.querySelector('[data-act="mute"]').textContent = pen.muted ? 'Alert Me' : "Don't Alert Me";
   ctxMenu.classList.remove('hidden');
   const rect = ctxMenu.getBoundingClientRect();
   const left = Math.min(x, window.innerWidth - rect.width - 8);
@@ -559,6 +653,9 @@ ctxMenu.querySelectorAll('button').forEach((b) => b.addEventListener('click', ()
   closeCtxMenu();
   if (!pen) return;
   if (act === 'rename') startTitleEdit(pen);
+  else if (act === 'pin') { pen.pinned = !pen.pinned; renderField(); }
+  else if (act === 'shade') setShaded(pen, !pen.shaded);
+  else if (act === 'mute') { pen.muted = !pen.muted; if (pen.muted) clearAttention(pen); }
   else if (act === 'left') movePen(pen.id, -1);
   else if (act === 'right') movePen(pen.id, 1);
   else if (act === 'close') closePen(pen.id);
@@ -765,6 +862,10 @@ window.addEventListener('keydown', (e) => {
   else if (e.metaKey && (e.key === '=' || e.key === '+')) { e.preventDefault(); adjustFont(1); }
   else if (e.metaKey && (e.key === '-' || e.key === '_')) { e.preventDefault(); adjustFont(-1); }
   else if (e.metaKey && e.key === '0') { e.preventDefault(); resetFont(); }
+  else if (e.metaKey && e.shiftKey && (e.code === 'BracketRight' || e.code === 'BracketLeft')) {
+    e.preventDefault();
+    cycleFocus(e.code === 'BracketRight' ? 1 : -1);
+  }
   else if (e.key === 'Escape') {
     if (!prefsEl.classList.contains('hidden')) closePrefs();
     addMenu.classList.add('hidden');
@@ -772,6 +873,10 @@ window.addEventListener('keydown', (e) => {
   }
 });
 window.addEventListener('resize', () => requestAnimationFrame(refitAll));
+
+/* A drop that misses a terminal must never navigate the window away */
+window.addEventListener('dragover', (e) => e.preventDefault());
+window.addEventListener('drop', (e) => e.preventDefault());
 
 /* ----------------------------- Update banner ---------------------------- */
 

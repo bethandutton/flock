@@ -1,8 +1,11 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('flock', {
   createTerminal: (id, cols, rows, cwd) => ipcRenderer.invoke('pty-create', { id, cols, rows, cwd }),
   pickDirectory: () => ipcRenderer.invoke('pick-directory'),
+  pathForFile: (file) => webUtils.getPathForFile(file),
+  beep: () => ipcRenderer.send('beep'),
+  focusWindow: () => ipcRenderer.send('focus-window'),
   sendInput: (id, data) => ipcRenderer.send('pty-input', { id, data }),
   resize: (id, cols, rows) => ipcRenderer.send('pty-resize', { id, cols, rows }),
   kill: (id) => ipcRenderer.send('pty-kill', { id }),

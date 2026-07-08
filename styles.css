@@ -105,13 +105,14 @@ body {
   flex: 0 0 auto;
   width: 380px;
   min-width: 240px;
-  height: 100%;
+  height: calc(100% - var(--scrollbar-gutter, 0px));
   border-right: 1px solid var(--border);
 }
 
 /* The header row is the window's titlebar: draggable, with interactive
    bits (title, close) opting out so they stay clickable. */
 .pen-header {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -928,7 +929,7 @@ body.focus-mode #tabbar .pen-header.busy {
   position: relative;
   flex: 1 0 46px;
   min-width: 46px;
-  height: 100%;
+  height: calc(100% - var(--scrollbar-gutter, 0px));
   -webkit-app-region: drag;
 }
 
@@ -987,6 +988,10 @@ body.focus-mode #tabbar .pen-header.busy {
 
 .menu button:hover {
   background: var(--hover);
+}
+
+.menu button.hidden {
+  display: none;
 }
 
 #add-menu {
