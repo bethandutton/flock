@@ -708,9 +708,35 @@ function persist() {
   persistTimer = setTimeout(() => window.flock.savePrefs(prefs), 200);
 }
 
+function applyPrefs(saved) {
+  if (!saved || typeof saved !== 'object') return;
+  Object.assign(prefs, saved);
+  prefs.custom = { ...prefs.custom, ...(saved.custom || {}) };
+  prefs.grid = { ...prefs.grid, ...(saved.grid || {}) };
+}
+
+// Hand-edits to the config file (Flock → Edit Config File…) apply live
+window.flock.onPrefsChanged((saved) => {
+  applyPrefs(saved);
+  applyTheme();
+  renderField();
+  for (const pen of pens.values()) {
+    applyActivityVisibility(pen);
+    if (!prefs.showActivity) pen.statusEl.textContent = '';
+  }
+  if (!prefsEl.classList.contains('hidden')) { buildThemeCards(); syncPrefsUI(); }
+});
+
+window.flock.onFlushPrefs(() => window.flock.savePrefs(prefs));
+
 /* ------------------------------ Shell I/O ------------------------------- */
 
-window.flock.onData(({ id, data }) => { const pen = pens.get(id); if (pen) pen.term.write(data); });
+window.flock.onData(({ id, data }) => {
+  const pen = pens.get(id);
+  if (!pen) return;
+  pen.lastData = performance.now();
+  pen.term.write(data);
+});
 window.flock.onExit(({ id }) => { if (pens.has(id)) closePen(id); });
 
 /* ------------------------- Shortcuts + window --------------------------- */
@@ -762,12 +788,20 @@ document.getElementById('update-dismiss').addEventListener('click', () => {
 /* ------------------------------- Startup -------------------------------- */
 
 (async function init() {
-  const saved = await window.flock.getPrefs();
-  if (saved && typeof saved === 'object') {
-    Object.assign(prefs, saved);
-    prefs.custom = { ...prefs.custom, ...(saved.custom || {}) };
-    prefs.grid = { ...prefs.grid, ...(saved.grid || {}) };
-  }
+  applyPrefs(await window.flock.getPrefs());
   applyTheme();
   renderField();
+
+  // Canvas rendering doesn't trigger @font-face loading on its own, so pull
+  // the bundled font in explicitly, then re-measure any early terminals.
+  Promise.all([
+    document.fonts.load('400 13px "JetBrains Mono"'),
+    document.fonts.load('700 13px "JetBrains Mono"'),
+  ]).then(() => {
+    for (const pen of pens.values()) {
+      pen.term.options.fontFamily = 'monospace';
+      pen.term.options.fontFamily = termFont();
+    }
+    refitAll();
+  });
 })();

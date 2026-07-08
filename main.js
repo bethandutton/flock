@@ -57,6 +57,15 @@ function buildMenu() {
           accelerator: 'CmdOrCtrl+,',
           click: () => mainWindow && mainWindow.webContents.send('open-preferences'),
         },
+        {
+          label: 'Edit Config File…',
+          click: () => {
+            // Ask the renderer to write the full current config first, so the
+            // file always opens complete and self-documenting.
+            if (mainWindow) mainWindow.webContents.send('flush-prefs');
+            setTimeout(() => shell.openPath(prefsPath), 250);
+          },
+        },
         { type: 'separator' },
         { role: 'hide' },
         { role: 'hideOthers' },
@@ -94,13 +103,40 @@ ipcMain.handle('get-prefs', () => {
   }
 });
 
+let lastSavedPrefs = null;
+
 ipcMain.on('save-prefs', (event, data) => {
   try {
-    fs.writeFileSync(prefsPath, JSON.stringify(data, null, 2));
+    lastSavedPrefs = JSON.stringify(data, null, 2);
+    fs.writeFileSync(prefsPath, lastSavedPrefs);
   } catch (_) {
     // best-effort; ignore write failures
   }
 });
+
+/* Hand-edits to prefs.json apply live. Writes the app itself makes are
+   remembered and skipped, so saving from the UI doesn't echo back. */
+function watchPrefsFile() {
+  let timer = null;
+  try {
+    fs.watch(path.dirname(prefsPath), (_eventType, filename) => {
+      if (filename !== path.basename(prefsPath) || !mainWindow) return;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        try {
+          const raw = fs.readFileSync(prefsPath, 'utf8');
+          if (raw === lastSavedPrefs) return;
+          lastSavedPrefs = raw;
+          mainWindow.webContents.send('prefs-changed', JSON.parse(raw));
+        } catch (_) {
+          // mid-edit or invalid JSON — wait for the next save
+        }
+      }, 150);
+    });
+  } catch (_) {
+    // watching is a nicety; the file still loads on next launch
+  }
+}
 
 /* ----------------------------- Terminals -------------------------------- */
 
@@ -289,7 +325,9 @@ app.whenReady().then(() => {
   }
   buildMenu();
   createWindow();
+  watchPrefsFile();
   setInterval(sampleStats, 2000);
+  setInterval(sampleLocations, 2000);
   setTimeout(checkForUpdates, 5000);
   setInterval(checkForUpdates, 4 * 60 * 60 * 1000);
   app.on('activate', () => {
