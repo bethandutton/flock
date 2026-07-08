@@ -7,7 +7,7 @@ const pty = require('node-pty');
 
 app.setName('Flock');
 
-const shell = process.env.SHELL || (os.platform() === 'win32' ? 'powershell.exe' : 'zsh');
+const defaultShell = process.env.SHELL || (os.platform() === 'win32' ? 'powershell.exe' : 'zsh');
 const iconPath = path.join(__dirname, 'assets', 'icon.png');
 const prefsPath = path.join(app.getPath('userData'), 'prefs.json');
 
@@ -101,7 +101,7 @@ ipcMain.on('save-prefs', (event, data) => {
 /* ----------------------------- Terminals -------------------------------- */
 
 ipcMain.handle('pty-create', (event, { id, cols, rows, cwd }) => {
-  const term = pty.spawn(shell, [], {
+  const term = pty.spawn(defaultShell, [], {
     name: 'xterm-256color',
     cols: cols || 80,
     rows: rows || 24,
