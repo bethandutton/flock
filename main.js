@@ -391,7 +391,6 @@ app.whenReady().then(() => {
   setInterval(sampleStats, 2000);
   setInterval(sampleLocations, 2000);
   setTimeout(checkForUpdates, 5000);
-  setInterval(checkForUpdates, 4 * 60 * 60 * 1000);
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
