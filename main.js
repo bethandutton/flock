@@ -84,6 +84,13 @@ function buildMenu() {
     {
       label: 'View',
       submenu: [
+        {
+          label: 'Focus Mode',
+          type: 'checkbox',
+          accelerator: 'CmdOrCtrl+Shift+F',
+          click: (item) => mainWindow && mainWindow.webContents.send('focus-mode', item.checked),
+        },
+        { type: 'separator' },
         { role: 'togglefullscreen' },
         { role: 'toggleDevTools' },
       ],

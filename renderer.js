@@ -699,6 +699,23 @@ function openPrefs() { buildThemeCards(); syncPrefsUI(); prefsEl.classList.remov
 function closePrefs() { prefsEl.classList.add('hidden'); }
 prefsDoneBtn.addEventListener('click', closePrefs);
 window.flock.onOpenPreferences(() => (prefsEl.classList.contains('hidden') ? openPrefs() : closePrefs()));
+/* Focus mode: terminals that are mid-task (still streaming output) blur away;
+   the ones sitting quiet or asking for approval stay crisp. */
+let focusTimer = null;
+function updateBusy() {
+  const now = performance.now();
+  for (const [pid, p] of pens) {
+    const busy = !p.attention && pid !== focusedId && now - (p.lastData || 0) < 1500;
+    p.el.classList.toggle('busy', busy);
+    p.headerEl.classList.toggle('busy', busy);
+  }
+}
+window.flock.onFocusMode((on) => {
+  document.body.classList.toggle('focus-mode', on);
+  if (focusTimer) { clearInterval(focusTimer); focusTimer = null; }
+  if (on) { updateBusy(); focusTimer = setInterval(updateBusy, 500); }
+  else for (const p of pens.values()) { p.el.classList.remove('busy'); p.headerEl.classList.remove('busy'); }
+});
 
 /* ---------------------------- Persistence ------------------------------- */
 
