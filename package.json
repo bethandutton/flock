@@ -1,7 +1,7 @@
 {
   "name": "flock",
   "productName": "Flock",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Flock: run a whole flock of terminals side by side in one window. Rename each pen, resize or reorder them, switch between a compact scrolling layout and a fixed grid, and theme it your way.",
   "keywords": [
     "terminal",
@@ -15,7 +15,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --mac",
+    "dist": "APPLE_KEYCHAIN_PROFILE=flock-notary electron-builder --mac",
     "postinstall": "electron-rebuild -f -w node-pty"
   },
   "build": {
@@ -24,7 +24,8 @@
     "mac": {
       "category": "public.app-category.developer-tools",
       "icon": "assets/icon.icns",
-      "identity": null,
+      "hardenedRuntime": true,
+      "notarize": true,
       "target": [
         "dmg"
       ],
