@@ -224,7 +224,7 @@ const prefs = {
 
 const DEFAULT_WIDTH = 380;
 const MIN_WIDTH = 240;
-const BASE_FONT = 13;
+const BASE_FONT = 12;
 const MIN_FONT = 8;
 const MAX_FONT = 32;
 
