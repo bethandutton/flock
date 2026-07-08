@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('flock', {
   onData: (handler) => ipcRenderer.on('pty-data', (_e, payload) => handler(payload)),
   onExit: (handler) => ipcRenderer.on('pty-exit', (_e, payload) => handler(payload)),
   onStats: (handler) => ipcRenderer.on('pty-stats', (_e, payload) => handler(payload)),
+  onLocation: (handler) => ipcRenderer.on('pty-location', (_e, payload) => handler(payload)),
   getPrefs: () => ipcRenderer.invoke('get-prefs'),
   savePrefs: (prefs) => ipcRenderer.send('save-prefs', prefs),
   onOpenPreferences: (handler) => ipcRenderer.on('open-preferences', () => handler()),

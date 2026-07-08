@@ -117,6 +117,7 @@ ipcMain.handle('pty-create', (event, { id, cols, rows, cwd }) => {
   });
 
   pens.set(id, term);
+  setTimeout(sampleLocations, 250);
   return { id };
 });
 
@@ -176,6 +177,60 @@ function sampleStats() {
         (children.get(p) || []).forEach((c) => stack.push(c));
       }
       mainWindow.webContents.send('pty-stats', { id, cpu: Math.round(cpu), mem: Math.round(rss / 1024) });
+    }
+  });
+}
+
+/* ---------------------------- Location sampler --------------------------- */
+
+/* Reads the branch straight from .git/HEAD (walking up to the repo root, and
+   following worktree pointer files) so no git process is spawned per tick. */
+function gitBranch(dir) {
+  try {
+    let d = dir;
+    while (d && d !== path.dirname(d)) {
+      const dotGit = path.join(d, '.git');
+      if (fs.existsSync(dotGit)) {
+        let gitDir = dotGit;
+        if (fs.statSync(dotGit).isFile()) {
+          const m = fs.readFileSync(dotGit, 'utf8').match(/^gitdir: (.+)$/m);
+          if (!m) return null;
+          gitDir = path.resolve(d, m[1].trim());
+        }
+        const head = fs.readFileSync(path.join(gitDir, 'HEAD'), 'utf8').trim();
+        const ref = head.match(/^ref: refs\/heads\/(.+)$/);
+        // Detached HEAD (e.g. a worktree parked on origin/main) has no branch,
+        // only a commit — say so rather than showing a bare hash.
+        return ref ? ref[1] : `${head.slice(0, 7)} (no branch)`;
+      }
+      d = path.dirname(d);
+    }
+  } catch (_) { /* not a repo, or unreadable */ }
+  return null;
+}
+
+function tildify(dir) {
+  const home = os.homedir();
+  return dir === home || dir.startsWith(home + path.sep) ? '~' + dir.slice(home.length) : dir;
+}
+
+function sampleLocations() {
+  if (!mainWindow || pens.size === 0) return;
+  const pidToId = new Map();
+  for (const [id, term] of pens) pidToId.set(term.pid, id);
+  // lsof exits non-zero when any pid has already gone; the stdout that did
+  // arrive is still valid, so ignore err and parse what we got.
+  exec(`lsof -a -p ${[...pidToId.keys()].join(',')} -d cwd -Fpn`, (err, stdout) => {
+    if (!mainWindow || !stdout) return;
+    let pid = null;
+    for (const line of stdout.split('\n')) {
+      if (line[0] === 'p') pid = +line.slice(1);
+      else if (line[0] === 'n' && pid !== null) {
+        const id = pidToId.get(pid);
+        if (!id) continue;
+        const dir = line.slice(1);
+        mainWindow.webContents.send('pty-location', { id, dir: tildify(dir), branch: gitBranch(dir) });
+      }
     }
   });
 }

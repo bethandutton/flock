@@ -150,6 +150,26 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex-shrink: 0;
+}
+
+/* The live shell location (directory · branch), pushed to the right of the
+   header. Gives up its space before the title does, so the title always
+   stays readable. */
+.pen-location {
+  margin-left: auto;
+  padding-left: 8px;
+  min-width: 0;
+  font-size: 11px;
+  color: var(--text);
+  opacity: 0.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pen-location:empty {
+  display: none;
 }
 
 .pen-title.editing {

@@ -273,7 +273,7 @@ function makePen({ cwd, title } = {}) {
   el.dataset.id = id;
   el.innerHTML = `
     <div class="pen-header">
-      <div class="pen-titles"><div class="pen-title">Terminal</div></div>
+      <div class="pen-titles"><div class="pen-title">Terminal</div><div class="pen-location"></div></div>
       <div class="pen-close" title="Close (⌘W)">✕</div>
     </div>
     <div class="pen-term"></div>
@@ -282,6 +282,7 @@ function makePen({ cwd, title } = {}) {
 
   const headerEl = el.querySelector('.pen-header');
   const titleEl = el.querySelector('.pen-title');
+  const locationEl = el.querySelector('.pen-location');
   const closeEl = el.querySelector('.pen-close');
   const termEl = el.querySelector('.pen-term');
   const statusEl = el.querySelector('.pen-status');
@@ -304,17 +305,63 @@ function makePen({ cwd, title } = {}) {
   term.open(termEl);
   attachGpuRenderer(term);
 
-  const pen = { id, el, titleEl, statusEl, term, fit, customTitle: false, editing: false, fontSize: BASE_FONT };
+  const pen = { id, el, headerEl, titleEl, locationEl, statusEl, termEl, term, fit, customTitle: false, editing: false, pinned: false, fontSize: BASE_FONT };
   pens.set(id, pen);
 
+  // Refit whenever the terminal's box changes for any reason — column drags,
+  // the field scrollbar appearing, grid changes, or a tab becoming visible.
+  pen.ro = new ResizeObserver(() => refit(pen));
+  pen.ro.observe(termEl);
+
   if (title) { titleEl.textContent = title; pen.customTitle = true; }
+  titleEl.title = titleEl.textContent;
 
   term.onData((data) => window.flock.sendInput(id, data));
-  term.onTitleChange((tt) => { if (!pen.customTitle && tt) titleEl.textContent = tt; });
+  term.onTitleChange((tt) => {
+    if (!pen.customTitle && tt) { titleEl.textContent = tt; titleEl.title = tt; }
+  });
+
+  /* CLIs ring the terminal bell when they want a human (Claude Code does this
+     while waiting for input). Surface it: flashing dot on the header, and a
+     notification + sound when the window isn't front-most. */
+  term.onBell(() => {
+    if (pen.muted) return;
+    const away = !document.hasFocus();
+    if (!away && focusedId === id) return;
+    const firstAlert = !pen.attention;
+    markAttention(pen);
+    if (away && firstAlert) {
+      window.flock.beep();
+      const note = new Notification(titleEl.textContent, {
+        body: `${locationEl.textContent || 'Terminal'} — ready for you`,
+      });
+      note.onclick = () => {
+        window.flock.focusWindow();
+        setFocused(id);
+        requestAnimationFrame(() => term.focus());
+      };
+    }
+  });
   termEl.addEventListener('mousedown', () => setFocused(id));
 
+  /* Dropping files types their (shell-escaped) paths at the prompt, the way
+     Terminal.app does — so images and files can be handed to CLIs like
+     Claude Code and CodeRabbit. term.paste() respects bracketed paste. */
+  termEl.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+  termEl.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const paths = [...e.dataTransfer.files].map((f) => window.flock.pathForFile(f)).filter(Boolean);
+    if (!paths.length) return;
+    term.paste(paths.map((p) => p.replace(/[^A-Za-z0-9,._+@%/\-]/g, '\\$&')).join(' '));
+    setFocused(id);
+    term.focus();
+  });
+
   closeEl.addEventListener('mousedown', (e) => { e.stopPropagation(); closePen(id); });
-  titleEl.addEventListener('mousedown', () => setFocused(id));
+  headerEl.addEventListener('mousedown', () => {
+    setFocused(id);
+    if (prefs.layout === 'tabs') requestAnimationFrame(() => { if (!pen.editing) term.focus(); });
+  });
   titleEl.addEventListener('dblclick', () => startTitleEdit(pen));
   headerEl.addEventListener('contextmenu', (e) => { e.preventDefault(); openCtxMenu(pen, e.clientX, e.clientY); });
   resizerEl.addEventListener('mousedown', (e) => startResize(e, pen, resizerEl));
@@ -553,6 +600,13 @@ function applyActivityVisibility(pen) {
 window.flock.onStats(({ id, cpu, mem }) => {
   const pen = pens.get(id);
   if (pen && prefs.showActivity) pen.statusEl.textContent = `CPU ${cpu}%  ·  ${mem} MB`;
+});
+
+window.flock.onLocation(({ id, dir, branch }) => {
+  const pen = pens.get(id);
+  if (!pen) return;
+  pen.locationEl.textContent = branch ? `${dir} · ${branch}` : dir;
+  pen.locationEl.title = branch ? `${dir} on ${branch}` : dir;
 });
 
 /* ------------------------------ Add menu -------------------------------- */
