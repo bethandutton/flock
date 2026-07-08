@@ -22,5 +22,7 @@ contextBridge.exposeInMainWorld('flock', {
   onPrefsChanged: (handler) => ipcRenderer.on('prefs-changed', (_e, payload) => handler(payload)),
   onUpdateAvailable: (handler) => ipcRenderer.on('update-available', (_e, payload) => handler(payload)),
   onUpdateNone: (handler) => ipcRenderer.on('update-none', (_e, payload) => handler(payload)),
+  onUpdateDownloaded: (handler) => ipcRenderer.on('update-downloaded', (_e, payload) => handler(payload)),
+  installUpdate: () => ipcRenderer.send('install-update'),
   openUpdate: (url) => ipcRenderer.send('open-update', url),
 });

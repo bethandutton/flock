@@ -27,7 +27,8 @@
       "hardenedRuntime": true,
       "notarize": true,
       "target": [
-        "dmg"
+        "dmg",
+        "zip"
       ],
       "artifactName": "${productName}-${version}.${ext}"
     },
@@ -61,6 +62,13 @@
       "assets/icon.png",
       "assets/icon.icns",
       "assets/welcome.mp4"
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "bethandutton",
+        "repo": "flock"
+      }
     ]
   },
   "author": "Bethan Dutton",
@@ -76,6 +84,7 @@
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/addon-webgl": "^0.19.0",
     "@xterm/xterm": "^5.5.0",
+    "electron-updater": "^6.8.9",
     "node-pty": "^1.0.0"
   }
 }

@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, nativeImage, dialog, Menu, net, shell } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
@@ -301,9 +302,10 @@ function sampleLocations() {
   });
 }
 
-/* ----------------------------- Update check ----------------------------- */
+/* ------------------------------- Updates -------------------------------- */
 
 const UPDATE_REPO = 'bethandutton/flock';
+let manualCheck = false;
 
 function isNewer(a, b) {
   const x = String(a).replace(/^v/, '').split('.').map((n) => parseInt(n, 10) || 0);
@@ -314,10 +316,39 @@ function isNewer(a, b) {
   return false;
 }
 
+/* New versions download in the background and install only when the user
+   clicks Restart, or on a normal quit. Nothing is forced mid-session. */
+function setupAutoUpdater() {
+  if (!app.isPackaged) return;
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.on('update-available', (info) => {
+    manualCheck = false;
+    if (mainWindow) mainWindow.webContents.send('update-available', { version: info.version });
+  });
+  autoUpdater.on('update-downloaded', (info) => {
+    if (mainWindow) mainWindow.webContents.send('update-downloaded', { version: info.version });
+  });
+  autoUpdater.on('update-not-available', () => {
+    if (manualCheck && mainWindow) mainWindow.webContents.send('update-none', { version: app.getVersion() });
+    manualCheck = false;
+  });
+  autoUpdater.on('error', () => {
+    if (manualCheck && mainWindow) mainWindow.webContents.send('update-none', { version: app.getVersion(), offline: true });
+    manualCheck = false;
+  });
+}
+
 /* Automatic checks stay silent unless there's news; a manual check (from the
    menu) always answers, even when already up to date or offline. */
 async function checkForUpdates(manual = false) {
   if (!mainWindow) return;
+  if (app.isPackaged) {
+    manualCheck = manual;
+    autoUpdater.checkForUpdates().catch(() => { /* the error event answers */ });
+    return;
+  }
+  // Running from source: fall back to comparing against the latest release
   try {
     const res = await net.fetch(`https://api.github.com/repos/${UPDATE_REPO}/releases/latest`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -336,6 +367,10 @@ async function checkForUpdates(manual = false) {
   }
 }
 
+ipcMain.on('install-update', () => {
+  if (app.isPackaged) autoUpdater.quitAndInstall();
+});
+
 ipcMain.on('open-update', (event, url) => {
   if (typeof url === 'string' && url.startsWith(`https://github.com/${UPDATE_REPO}/`)) {
     shell.openExternal(url);
@@ -352,6 +387,7 @@ app.whenReady().then(() => {
   buildMenu();
   createWindow();
   watchPrefsFile();
+  setupAutoUpdater();
   setInterval(sampleStats, 2000);
   setInterval(sampleLocations, 2000);
   setTimeout(checkForUpdates, 5000);

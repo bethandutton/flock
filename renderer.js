@@ -972,8 +972,20 @@ let updateHideTimer = null;
 
 window.flock.onUpdateAvailable(({ version, url }) => {
   if (updateHideTimer) { clearTimeout(updateHideTimer); updateHideTimer = null; }
-  updateUrl = url;
-  updateText.textContent = `Flock ${version} is available`;
+  // With a url we can only point at the release page (running from source);
+  // without one the packaged app is already downloading it in the background.
+  updateUrl = url || null;
+  updateText.textContent = url ? `Flock ${version} is available` : `Flock ${version} is downloading`;
+  updateGetBtn.textContent = 'Download';
+  updateGetBtn.classList.toggle('hidden', !url);
+  updateBanner.classList.remove('hidden');
+});
+
+window.flock.onUpdateDownloaded(({ version }) => {
+  if (updateHideTimer) { clearTimeout(updateHideTimer); updateHideTimer = null; }
+  updateUrl = null;
+  updateText.textContent = `Flock ${version} is ready to install`;
+  updateGetBtn.textContent = 'Restart';
   updateGetBtn.classList.remove('hidden');
   updateBanner.classList.remove('hidden');
 });
@@ -987,6 +999,7 @@ window.flock.onUpdateNone(({ version, offline }) => {
 });
 document.getElementById('update-get').addEventListener('click', () => {
   if (updateUrl) window.flock.openUpdate(updateUrl);
+  else window.flock.installUpdate();
 });
 document.getElementById('update-dismiss').addEventListener('click', () => {
   updateBanner.classList.add('hidden');
