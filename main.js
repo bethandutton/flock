@@ -15,6 +15,7 @@ const prefsPath = path.join(app.getPath('userData'), 'prefs.json');
 // The flock: one pty per pen, keyed by the renderer's pen id.
 const pens = new Map();
 let mainWindow = null;
+let quitting = false;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -38,6 +39,14 @@ function createWindow() {
 
   mainWindow.loadFile('index.html');
   mainWindow.on('page-title-updated', (e) => e.preventDefault());
+  // Closing the window only hides it — the shells keep running and the dock
+  // icon brings everything back. Sessions end only on a real quit.
+  mainWindow.on('close', (e) => {
+    if (!quitting) {
+      e.preventDefault();
+      mainWindow.hide();
+    }
+  });
   mainWindow.on('closed', () => {
     for (const term of pens.values()) term.kill();
     pens.clear();
@@ -368,7 +377,11 @@ async function checkForUpdates(manual = false) {
 }
 
 ipcMain.on('install-update', () => {
-  if (app.isPackaged) autoUpdater.quitAndInstall();
+  if (app.isPackaged) {
+    // The user has already chosen to restart — no need to confirm the quit.
+    quitting = true;
+    autoUpdater.quitAndInstall();
+  }
 });
 
 ipcMain.on('open-update', (event, url) => {
@@ -392,7 +405,34 @@ app.whenReady().then(() => {
   setInterval(sampleLocations, 2000);
   setTimeout(checkForUpdates, 5000);
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    if (mainWindow) mainWindow.show();
+    else if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
+});
+
+/* Quitting really does end every session, so ask first when shells are
+   still running. Closing the window never triggers this — only ⌘Q. */
+app.on('before-quit', (e) => {
+  if (quitting || pens.size === 0) {
+    quitting = true;
+    return;
+  }
+  e.preventDefault();
+  if (mainWindow) mainWindow.show();
+  const count = pens.size;
+  const noun = count === 1 ? 'terminal session' : 'terminal sessions';
+  dialog.showMessageBox(mainWindow, {
+    type: 'warning',
+    message: 'Quit Flock?',
+    detail: `${count === 1 ? 'The' : `All ${count}`} ${noun} in this window will be terminated.`,
+    buttons: ['Quit', 'Cancel'],
+    defaultId: 0,
+    cancelId: 1,
+  }).then(({ response }) => {
+    if (response === 0) {
+      quitting = true;
+      app.quit();
+    }
   });
 });
 
