@@ -4,7 +4,56 @@
 --------------------------------------------------------------------------- */
 
 const fieldEl = document.getElementById('field');
+const tabbarEl = document.getElementById('tabbar');
 const welcomeEl = document.getElementById('welcome');
+const welcomeVideoEl = document.getElementById('welcome-video');
+const matrixCanvas = document.getElementById('welcome-matrix');
+
+/* Matrix rain on the welcome screen, in the theme's own colours. Runs only
+   while the welcome screen is visible. */
+const MATRIX_CHARS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789$+*<>#';
+const MATRIX_CELL = 16;
+let matrixRaf = null;
+let matrixDrops = [];
+let matrixLast = 0;
+
+function matrixStep(t) {
+  matrixRaf = requestAnimationFrame(matrixStep);
+  if (t - matrixLast < 50) return;
+  matrixLast = t;
+  const ctx = matrixCanvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = welcomeEl.clientWidth;
+  const h = welcomeEl.clientHeight;
+  const styles = getComputedStyle(document.documentElement);
+  const bg = styles.getPropertyValue('--bg').trim();
+  if (matrixCanvas.width !== Math.round(w * dpr) || matrixCanvas.height !== Math.round(h * dpr)) {
+    matrixCanvas.width = Math.round(w * dpr);
+    matrixCanvas.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    matrixDrops = Array.from({ length: Math.ceil(w / MATRIX_CELL) }, () => Math.floor(Math.random() * (h / MATRIX_CELL)));
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+  }
+  ctx.fillStyle = alpha(bg, 0.12);
+  ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = styles.getPropertyValue('--accent').trim();
+  ctx.font = `13px ${termFont()}`;
+  for (let i = 0; i < matrixDrops.length; i++) {
+    const chr = MATRIX_CHARS[(Math.random() * MATRIX_CHARS.length) | 0];
+    ctx.fillText(chr, i * MATRIX_CELL, matrixDrops[i] * MATRIX_CELL);
+    if (matrixDrops[i] * MATRIX_CELL > h && Math.random() > 0.975) matrixDrops[i] = 0;
+    matrixDrops[i]++;
+  }
+}
+function startMatrix() {
+  if (!matrixRaf) matrixRaf = requestAnimationFrame(matrixStep);
+}
+function stopMatrix() {
+  if (matrixRaf) cancelAnimationFrame(matrixRaf);
+  matrixRaf = null;
+  matrixCanvas.width = 0;
+}
 const welcomeNewBtn = document.getElementById('welcome-new');
 const welcomeOpenBtn = document.getElementById('welcome-open');
 
@@ -426,6 +475,10 @@ function renderField() {
     }
   }
   pens.forEach((p) => p.el.classList.toggle('is-first', p.id === order[0]));
+  // Don't burn CPU on the background video/animation while it's off screen
+  const welcomeVisible = welcomeEl.parentElement && !welcomeEl.classList.contains('hidden');
+  if (welcomeVisible) { welcomeVideoEl.play().catch(() => {}); startMatrix(); }
+  else { welcomeVideoEl.pause(); stopMatrix(); }
   requestAnimationFrame(refitAll);
 }
 

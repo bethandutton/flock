@@ -22,13 +22,19 @@
     <!-- The field: every pen (terminal) grazes here, side by side.
          Pen headers sit at the very top and act as the window's titlebar. -->
     <div id="field">
+      <!-- Tabs layout: the pen headers move up here to become the tabs -->
+      <div id="tabbar" class="hidden"></div>
       <div id="welcome">
-        <img class="welcome-avatar" src="assets/icon.png" alt="Flock" />
-        <h1>Welcome to Flock</h1>
-        <p>Run a whole flock of terminals side by side in one window. Add a pen for each task, resize them, and scroll across.</p>
-        <div class="welcome-actions">
-          <button id="welcome-new" class="topbar-btn">New Terminal</button>
-          <button id="welcome-open" class="topbar-btn secondary">Open Folder</button>
+        <canvas id="welcome-matrix"></canvas>
+        <video id="welcome-video" src="assets/welcome.mp4" autoplay loop muted playsinline></video>
+        <div class="welcome-card">
+          <img class="welcome-avatar" src="assets/icon.png" alt="Flock" />
+          <h1>Welcome to Flock</h1>
+          <p>A whole flock of terminals in one window. Line them up, name them, and always know which one needs you.</p>
+          <div class="welcome-actions">
+            <button id="welcome-new" class="topbar-btn">New Terminal</button>
+            <button id="welcome-open" class="topbar-btn secondary">Open Folder</button>
+          </div>
         </div>
       </div>
 
