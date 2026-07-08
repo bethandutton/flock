@@ -1125,6 +1125,43 @@ body.focus-mode #tabbar .pen-header.busy {
   display: none;
 }
 
+#add-recents {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+#add-recents.hidden {
+  display: none;
+}
+
+.menu-sep {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--panel-border);
+}
+
+.menu-label {
+  padding: 3px 10px 1px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.menu-recent {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  max-width: 280px;
+}
+
+.menu-recent .recent-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
 #add-menu {
   position: absolute;
   top: 38px;

@@ -62,6 +62,7 @@ const addBtn = document.getElementById('add-btn');
 const addMenu = document.getElementById('add-menu');
 const addNewBtn = document.getElementById('add-new');
 const addOpenBtn = document.getElementById('add-open');
+const addRecentsEl = document.getElementById('add-recents');
 const ctxMenu = document.getElementById('ctx-menu');
 
 const prefsEl = document.getElementById('prefs');
@@ -221,6 +222,7 @@ const prefs = {
   grid: { rows: 1, cols: 3 },
   fontFamily: '"JetBrains Mono"',
   showActivity: false,
+  recentFolders: [],
 };
 
 const DEFAULT_WIDTH = 380;
@@ -402,11 +404,16 @@ function addPen(opts = {}) {
   requestAnimationFrame(() => { pen.term.focus(); pen.el.scrollIntoView({ inline: 'end', behavior: 'smooth' }); });
 }
 
+function openIn(dir) {
+  const name = dir.split('/').filter(Boolean).pop() || dir;
+  prefs.recentFolders = [dir, ...prefs.recentFolders.filter((d) => d !== dir)].slice(0, 5);
+  persist();
+  addPen({ cwd: dir, title: name });
+}
+
 async function openFolder() {
   const dir = await window.flock.pickDirectory();
-  if (!dir) return;
-  const name = dir.split('/').filter(Boolean).pop() || dir;
-  addPen({ cwd: dir, title: name });
+  if (dir) openIn(dir);
 }
 
 function setFocused(id) {
@@ -781,7 +788,26 @@ window.flock.onLocation(({ id, dir, branch }) => {
 
 /* ------------------------------ Add menu -------------------------------- */
 
-addBtn.addEventListener('click', (e) => { e.stopPropagation(); addMenu.classList.toggle('hidden'); });
+function renderRecents() {
+  addRecentsEl.querySelectorAll('button').forEach((b) => b.remove());
+  addRecentsEl.classList.toggle('hidden', prefs.recentFolders.length === 0);
+  for (const dir of prefs.recentFolders) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'menu-recent';
+    const name = document.createElement('span');
+    name.textContent = dir.split('/').filter(Boolean).pop() || dir;
+    const path = document.createElement('span');
+    path.className = 'recent-path';
+    path.textContent = dir.replace(/^\/Users\/[^/]+/, '~');
+    btn.append(name, path);
+    btn.title = dir;
+    btn.addEventListener('click', () => { addMenu.classList.add('hidden'); openIn(dir); });
+    addRecentsEl.appendChild(btn);
+  }
+}
+
+addBtn.addEventListener('click', (e) => { e.stopPropagation(); renderRecents(); addMenu.classList.toggle('hidden'); });
 addNewBtn.addEventListener('click', () => { addMenu.classList.add('hidden'); addPen(); });
 addOpenBtn.addEventListener('click', () => { addMenu.classList.add('hidden'); openFolder(); });
 document.addEventListener('click', (e) => { if (!addEl.contains(e.target)) addMenu.classList.add('hidden'); });
@@ -903,6 +929,7 @@ function applyPrefs(saved) {
   prefs.grid = { ...prefs.grid, ...(saved.grid || {}) };
   // Fonts that were offered briefly and withdrawn
   if (prefs.fontFamily === '"DM Sans"' || prefs.fontFamily === '"Inter"') prefs.fontFamily = '"JetBrains Mono"';
+  if (!Array.isArray(prefs.recentFolders)) prefs.recentFolders = [];
 }
 
 // Hand-edits to the config file (Flock → Edit Config File…) apply live
