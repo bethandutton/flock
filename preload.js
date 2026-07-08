@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld('flock', {
   savePrefs: (prefs) => ipcRenderer.send('save-prefs', prefs),
   onOpenPreferences: (handler) => ipcRenderer.on('open-preferences', () => handler()),
   onFocusMode: (handler) => ipcRenderer.on('focus-mode', (_e, on) => handler(on)),
+  onCopyPlain: (handler) => ipcRenderer.on('copy-plain', () => handler()),
   onFlushPrefs: (handler) => ipcRenderer.on('flush-prefs', () => handler()),
   onPrefsChanged: (handler) => ipcRenderer.on('prefs-changed', (_e, payload) => handler(payload)),
   onUpdateAvailable: (handler) => ipcRenderer.on('update-available', (_e, payload) => handler(payload)),

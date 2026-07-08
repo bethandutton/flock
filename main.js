@@ -81,7 +81,13 @@ function buildMenu() {
       label: 'Edit',
       submenu: [
         { role: 'undo' }, { role: 'redo' }, { type: 'separator' },
-        { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' },
+        { role: 'cut' }, { role: 'copy' },
+        {
+          label: 'Copy Without Line Breaks',
+          accelerator: 'CmdOrCtrl+Shift+C',
+          click: () => mainWindow && mainWindow.webContents.send('copy-plain'),
+        },
+        { role: 'paste' }, { role: 'selectAll' },
       ],
     },
     {

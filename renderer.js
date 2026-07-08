@@ -844,6 +844,16 @@ window.flock.onPrefsChanged((saved) => {
 
 window.flock.onFlushPrefs(() => window.flock.savePrefs(prefs));
 
+/* TUIs wrap their text by printing real newlines, which survive an ordinary
+   copy. This flows the selection into one paragraph for pasting into chat
+   or documents. */
+window.flock.onCopyPlain(() => {
+  const pen = pens.get(focusedId);
+  if (!pen) return;
+  const sel = pen.term.getSelection();
+  if (sel) navigator.clipboard.writeText(sel.replace(/\s*\n\s*/g, ' ').trim());
+});
+
 /* ------------------------------ Shell I/O ------------------------------- */
 
 window.flock.onData(({ id, data }) => {
