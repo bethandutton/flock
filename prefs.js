@@ -13,7 +13,7 @@ const lineHeightEl = document.getElementById('line-height');
 const showActivityEl = document.getElementById('show-activity');
 
 const prefs = {
-  theme: 'meadow',
+  theme: 'fleece',
   custom: { bg: '#1e1e1e', header: '#262626', text: '#e6e6e6', accent: '#2f8f4f' },
   layout: 'compact',
   grid: { rows: 1, cols: 3 },

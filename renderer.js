@@ -37,10 +37,18 @@ function matrixStep(t) {
   }
   ctx.fillStyle = alpha(bg, 0.12);
   ctx.fillRect(0, 0, w, h);
-  ctx.fillStyle = styles.getPropertyValue('--accent').trim();
+  // Mostly accent, with the odd glyph in the theme's other tones so the
+  // rain reads as liquid colour rather than a single-hue matrix
+  const inks = [
+    styles.getPropertyValue('--accent').trim(),
+    styles.getPropertyValue('--attention').trim(),
+    styles.getPropertyValue('--text-muted').trim(),
+  ];
   ctx.font = `13px ${termFont()}`;
   for (let i = 0; i < matrixDrops.length; i++) {
     const chr = MATRIX_CHARS[(Math.random() * MATRIX_CHARS.length) | 0];
+    const r = Math.random();
+    ctx.fillStyle = r < 0.72 ? inks[0] : r < 0.88 ? inks[1] : inks[2];
     ctx.fillText(chr, i * MATRIX_CELL, matrixDrops[i] * MATRIX_CELL);
     if (matrixDrops[i] * MATRIX_CELL > h && Math.random() > 0.975) matrixDrops[i] = 0;
     matrixDrops[i]++;
@@ -73,7 +81,7 @@ let focusedId = null;
 let counter = 0;
 
 const prefs = {
-  theme: 'meadow',
+  theme: 'fleece',
   custom: { bg: '#1e1e1e', header: '#262626', text: '#e6e6e6', accent: '#2f8f4f' },
   layout: 'compact',
   grid: { rows: 1, cols: 3 },

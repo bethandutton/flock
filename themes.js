@@ -36,6 +36,23 @@ const ANSI_DARK = {
 };
 
 const THEMES = {
+  // Drawn from the app icon: dusk lavender, fleece mint, arrow coral
+  fleece: {
+    label: 'Fleece',
+    swatch: ['#242332', '#2d2b40', '#8fe6c6'],
+    ui: {
+      '--bg': '#242332', '--bar-bg': '#2d2b40', '--pen-header': '#2d2b40', '--pen-header-active': '#363450',
+      '--text': '#d9d6ec', '--text-muted': '#8f8ba8', '--border': '#17161f', '--hover': '#3d3a58',
+      '--accent': '#8fe6c6', '--accent-hover': '#a5efd4', '--accent-active': '#79d1b2', '--accent-text': '#10241c',
+      '--secondary-bg': '#3d3a58', '--secondary-hover': '#494566', '--secondary-active': '#322f4a',
+      '--attention': '#f5a08c', '--scrollbar': '#494566', '--panel-bg': '#2d2b40', '--panel-border': '#413e5c', '--input-bg': '#1f1e2b',
+    },
+    term: {
+      background: '#242332', foreground: '#d9d6ec', cursor: '#8fe6c6', cursorAccent: '#242332', selectionBackground: '#3d3a58',
+      black: '#2d2b40', red: '#f59a8c', green: '#8fe6c6', yellow: '#ecd6a1', blue: '#9db4ee', magenta: '#c9aded', cyan: '#8fd8e6', white: '#d9d6ec',
+      brightBlack: '#6f6b8a', brightRed: '#f8b3a8', brightGreen: '#aeeed6', brightYellow: '#f2e2b8', brightBlue: '#b6c8f3', brightMagenta: '#dac4f2', brightCyan: '#abe4ee', brightWhite: '#f2f0fa',
+    },
+  },
   meadow: {
     label: 'Meadow',
     swatch: ['#1d2725', '#26302d', '#b5bd68'],
