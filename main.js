@@ -39,6 +39,11 @@ function createWindow() {
 
   mainWindow.loadFile('index.html');
   mainWindow.on('page-title-updated', (e) => e.preventDefault());
+  // The traffic lights hide in fullscreen, so the renderer drops their inset.
+  const sendFullScreen = () => mainWindow.webContents.send('fullscreen-changed', mainWindow.isFullScreen());
+  mainWindow.on('enter-full-screen', sendFullScreen);
+  mainWindow.on('leave-full-screen', sendFullScreen);
+  mainWindow.webContents.on('did-finish-load', sendFullScreen);
   // Closing the window only hides it — the shells keep running and the dock
   // icon brings everything back. Sessions end only on a real quit.
   mainWindow.on('close', (e) => {
@@ -68,7 +73,7 @@ function buildMenu() {
         {
           label: 'Preferences…',
           accelerator: 'CmdOrCtrl+,',
-          click: () => mainWindow && mainWindow.webContents.send('open-preferences'),
+          click: () => openPrefsWindow(),
         },
         {
           label: 'Edit Config File…',
@@ -121,6 +126,33 @@ function buildMenu() {
 
 /* ------------------------------- Prefs ---------------------------------- */
 
+let prefsWindow = null;
+
+function openPrefsWindow() {
+  if (prefsWindow) {
+    prefsWindow.show();
+    prefsWindow.focus();
+    return;
+  }
+  prefsWindow = new BrowserWindow({
+    title: 'Preferences',
+    width: 460,
+    height: 640,
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    backgroundColor: '#1e1e1e',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+  prefsWindow.loadFile('prefs.html');
+  prefsWindow.on('closed', () => { prefsWindow = null; });
+}
+
 ipcMain.handle('get-prefs', () => {
   try {
     return JSON.parse(fs.readFileSync(prefsPath, 'utf8'));
@@ -138,6 +170,12 @@ ipcMain.on('save-prefs', (event, data) => {
   } catch (_) {
     // best-effort; ignore write failures
   }
+  // Prefs change in two windows now — keep whichever didn't save in step
+  for (const win of [mainWindow, prefsWindow]) {
+    if (win && !win.isDestroyed() && win.webContents !== event.sender) {
+      win.webContents.send('prefs-changed', data);
+    }
+  }
 });
 
 /* Hand-edits to prefs.json apply live. Writes the app itself makes are
@@ -153,7 +191,9 @@ function watchPrefsFile() {
           const raw = fs.readFileSync(prefsPath, 'utf8');
           if (raw === lastSavedPrefs) return;
           lastSavedPrefs = raw;
-          mainWindow.webContents.send('prefs-changed', JSON.parse(raw));
+          const parsed = JSON.parse(raw);
+          mainWindow.webContents.send('prefs-changed', parsed);
+          if (prefsWindow) prefsWindow.webContents.send('prefs-changed', parsed);
         } catch (_) {
           // mid-edit or invalid JSON — wait for the next save
         }

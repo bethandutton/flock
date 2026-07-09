@@ -57,79 +57,6 @@
       </div>
     </div>
 
-    <!-- Preferences: theme + layout -->
-    <div id="prefs" class="prefs hidden">
-      <h2>Preferences</h2>
-
-      <div class="prefs-sub">Theme</div>
-      <div class="theme-grid" id="theme-grid"></div>
-      <div class="custom-fields hidden" id="custom-fields">
-        <label class="custom-field">Background<input type="color" data-var="bg" /></label>
-        <label class="custom-field">Header<input type="color" data-var="header" /></label>
-        <label class="custom-field">Text<input type="color" data-var="text" /></label>
-        <label class="custom-field">Accent<input type="color" data-var="accent" /></label>
-      </div>
-
-      <div class="prefs-sub prefs-sub-spaced">Layout</div>
-      <div class="layout-row" id="layout-options">
-        <button class="layout-opt" data-layout="compact" type="button">
-          <span class="layout-name">Compact</span>
-          <span class="layout-hint">Resizable columns, scroll across</span>
-        </button>
-        <button class="layout-opt" data-layout="fixed" type="button">
-          <span class="layout-name">Fixed</span>
-          <span class="layout-hint">A fixed grid of areas</span>
-        </button>
-        <button class="layout-opt" data-layout="tabs" type="button">
-          <span class="layout-name">Tabs</span>
-          <span class="layout-hint">One terminal at a time</span>
-        </button>
-        <button class="layout-opt" data-layout="dashboard" type="button">
-          <span class="layout-name">Dashboard</span>
-          <span class="layout-hint">Cards with live status</span>
-        </button>
-      </div>
-      <div class="grid-size hidden" id="grid-size">
-        <label class="custom-field">Rows
-          <select id="grid-rows">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-          </select>
-        </label>
-        <label class="custom-field">Columns
-          <select id="grid-cols">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-          </select>
-        </label>
-      </div>
-
-      <div class="prefs-sub prefs-sub-spaced">Terminal</div>
-      <label class="custom-field">Font
-        <select id="font-choice">
-          <option value="&quot;JetBrains Mono&quot;">JetBrains Mono</option>
-          <option value="&quot;SF Mono&quot;">SF Mono</option>
-          <option value="Menlo">Menlo</option>
-          <option value="Monaco">Monaco</option>
-          <option value="&quot;Courier New&quot;">Courier</option>
-        </select>
-      </label>
-
-      <div class="prefs-sub prefs-sub-spaced">General</div>
-      <label class="toggle-row">
-        <span class="toggle-label">Show activity bar<small>CPU &amp; memory per terminal</small></span>
-        <input type="checkbox" id="show-activity" />
-      </label>
-
-      <div class="prefs-actions">
-        <button id="prefs-done" type="button">Done</button>
-      </div>
-    </div>
-
     <!-- Shown when a newer release is out on GitHub -->
     <div id="update-banner" class="hidden">
       <span id="update-text">A new version of Flock is available</span>
@@ -140,6 +67,7 @@
     <script src="node_modules/@xterm/xterm/lib/xterm.js"></script>
     <script src="node_modules/@xterm/addon-fit/lib/addon-fit.js"></script>
     <script src="node_modules/@xterm/addon-webgl/lib/addon-webgl.js"></script>
+    <script src="themes.js"></script>
     <script src="renderer.js"></script>
   </body>
 </html>
