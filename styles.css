@@ -1142,7 +1142,8 @@ body.focus-mode #tabbar .pen-header.busy {
 
 #add-btn {
   -webkit-app-region: no-drag;
-  margin: 5px 0 0 4px;
+  /* Centred in the 46px strip: 9px each side of the 28px button */
+  margin: 5px 0 0 9px;
   width: 28px;
   height: 28px;
   border: none;
