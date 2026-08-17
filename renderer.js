@@ -774,6 +774,15 @@ welcomeRecentsBtn.addEventListener('click', (e) => {
   e.stopPropagation();
   renderRecents(welcomeRecentsMenu, welcomeRecentsMenu);
   welcomeRecentsMenu.classList.toggle('hidden');
+  if (!welcomeRecentsMenu.classList.contains('hidden')) {
+    // Fit the menu to the window: cap it to the space under the button,
+    // or open upwards when the window is too short below
+    const btn = welcomeRecentsBtn.getBoundingClientRect();
+    const below = window.innerHeight - btn.bottom - 14;
+    const up = below < 120 && btn.top - 14 > below;
+    welcomeRecentsMenu.classList.toggle('drop-up', up);
+    welcomeRecentsMenu.style.maxHeight = `${Math.min(260, up ? btn.top - 14 : below)}px`;
+  }
 });
 
 /* Focus mode: terminals that are mid-task (still streaming output) blur away;

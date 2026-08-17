@@ -279,6 +279,9 @@ body.fullscreen #field.mode-fixed .cell:first-child .cell-empty {
 #welcome {
   position: absolute;
   inset: 0;
+  /* The ::after colour wash bleeds past the edges; without this the field
+     grows a horizontal scrollbar to fit it */
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -402,6 +405,11 @@ body.fullscreen #field.mode-fixed .cell:first-child .cell-empty {
   z-index: 60;
   max-height: 260px;
   overflow-y: auto;
+}
+
+#welcome-recents-menu.drop-up {
+  top: auto;
+  bottom: calc(100% + 6px);
 }
 
 /* --- Shared panel styling (editor + preferences) --- */
