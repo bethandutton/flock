@@ -93,6 +93,7 @@ const prefs = {
   dashView: 'cards',
   showActivity: false,
   recentFolders: [],
+  views: [],
 };
 
 const DEFAULT_WIDTH = 380;
@@ -723,9 +724,10 @@ window.flock.onStats(({ id, cpu, mem }) => {
   if (pen && prefs.showActivity) pen.statusEl.textContent = `CPU ${cpu}%  ·  ${mem} MB`;
 });
 
-window.flock.onLocation(({ id, dir, branch }) => {
+window.flock.onLocation(({ id, dir, rawDir, branch }) => {
   const pen = pens.get(id);
   if (!pen) return;
+  pen.dir = rawDir;
   pen.locationEl.textContent = branch ? `${dir} · ${branch}` : dir;
   pen.locationEl.title = branch ? `${dir} on ${branch}` : dir;
 });
@@ -805,6 +807,89 @@ welcomeRecentsBtn.addEventListener('click', (e) => {
   }
 });
 
+/* ------------------------------- Views ----------------------------------- */
+
+/* A view is a snapshot of the flock's shape — how many pens, which folder
+   each points at, their order and custom names. Not what's running in them.
+   Saved into prefs.json alongside everything else; the View menu lists them. */
+
+const viewDialog = document.getElementById('view-dialog');
+const viewNameInput = document.getElementById('view-dialog-name');
+const viewHintEl = document.getElementById('view-dialog-hint');
+
+function defaultViewName() {
+  let n = prefs.views.length + 1;
+  while (prefs.views.some((v) => v.name === `View ${n}`)) n++;
+  return `View ${n}`;
+}
+
+function openViewDialog() {
+  if (!order.length) { window.flock.beep(); return; }
+  const n = order.length;
+  viewHintEl.textContent = n === 1
+    ? 'Saves this terminal and its folder, so you can reopen it later.'
+    : `Saves these ${n} terminals and their folders, so you can reopen them later.`;
+  viewNameInput.value = defaultViewName();
+  viewDialog.classList.remove('hidden');
+  viewNameInput.focus();
+  viewNameInput.select();
+}
+
+function closeViewDialog() {
+  viewDialog.classList.add('hidden');
+  const pen = pens.get(focusedId);
+  if (pen) requestAnimationFrame(() => pen.term.focus());
+}
+
+function saveView() {
+  const name = viewNameInput.value.trim();
+  if (!name) return;
+  const view = {
+    name,
+    pens: order.map((id) => {
+      const pen = pens.get(id);
+      return { cwd: pen.dir || null, title: pen.customTitle ? pen.titleEl.textContent : null };
+    }),
+  };
+  const i = prefs.views.findIndex((v) => v.name === name);
+  if (i >= 0) prefs.views[i] = view;
+  else prefs.views.push(view);
+  persist();
+  closeViewDialog();
+}
+
+function loadView(name) {
+  const view = prefs.views.find((v) => v.name === name);
+  if (!view || !view.pens.length) return;
+  if (prefs.layout === 'fixed') {
+    // Grow the grid so the whole view fits alongside what's already open
+    const before = `${prefs.grid.rows}×${prefs.grid.cols}`;
+    while (order.length + view.pens.length > capacity() && prefs.grid.cols < 5) prefs.grid.cols++;
+    while (order.length + view.pens.length > capacity() && prefs.grid.rows < 3) prefs.grid.rows++;
+    if (`${prefs.grid.rows}×${prefs.grid.cols}` !== before) persist();
+  }
+  for (const entry of view.pens) {
+    const folderName = entry.cwd ? entry.cwd.split('/').filter(Boolean).pop() : null;
+    addPen({ cwd: entry.cwd || undefined, title: entry.title || folderName || undefined });
+  }
+}
+
+document.getElementById('view-dialog-save').addEventListener('click', saveView);
+document.getElementById('view-dialog-cancel').addEventListener('click', closeViewDialog);
+viewDialog.addEventListener('mousedown', (e) => { if (e.target === viewDialog) closeViewDialog(); });
+viewNameInput.addEventListener('keydown', (e) => {
+  e.stopPropagation();
+  if (e.key === 'Enter') { e.preventDefault(); saveView(); }
+  else if (e.key === 'Escape') { e.preventDefault(); closeViewDialog(); }
+});
+
+window.flock.onSaveView(openViewDialog);
+window.flock.onLoadView(loadView);
+window.flock.onDeleteView((name) => {
+  prefs.views = prefs.views.filter((v) => v.name !== name);
+  persist();
+});
+
 /* Focus mode: terminals that are mid-task (still streaming output) blur away;
    the ones sitting quiet or asking for approval stay crisp. */
 let focusTimer = null;
@@ -839,6 +924,7 @@ function applyPrefs(saved) {
   // Fonts that were offered briefly and withdrawn
   if (prefs.fontFamily === '"DM Sans"' || prefs.fontFamily === '"Inter"') prefs.fontFamily = '"JetBrains Mono"';
   if (!Array.isArray(prefs.recentFolders)) prefs.recentFolders = [];
+  if (!Array.isArray(prefs.views)) prefs.views = [];
   prefs.lineHeight = Math.min(2, Math.max(1, Number(prefs.lineHeight) || 1));
   if (prefs.dashView !== 'kanban') prefs.dashView = 'cards';
 }

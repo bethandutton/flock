@@ -61,6 +61,19 @@
       </div>
     </div>
 
+    <!-- Names a snapshot of the current terminals (View → Save View…) -->
+    <div id="view-dialog" class="hidden">
+      <div class="view-dialog-card">
+        <div class="view-dialog-title">Save View</div>
+        <p id="view-dialog-hint"></p>
+        <input id="view-dialog-name" type="text" spellcheck="false" aria-label="View name" />
+        <div class="view-dialog-actions">
+          <button id="view-dialog-cancel" class="topbar-btn secondary" type="button">Cancel</button>
+          <button id="view-dialog-save" class="topbar-btn" type="button">Save</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Shown when a newer release is out on GitHub -->
     <div id="update-banner" class="hidden">
       <span id="update-text">A new version of Flock is available</span>

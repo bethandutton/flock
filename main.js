@@ -17,6 +17,19 @@ const pens = new Map();
 let mainWindow = null;
 let quitting = false;
 
+/* Saved views live in prefs.json (the renderer owns the writes); main keeps a
+   copy so the View menu can list them. The menu is rebuilt when names change,
+   so Focus Mode's checked state has to survive the rebuild. */
+let savedViews = [];
+let focusModeOn = false;
+
+function syncViewsMenu(views) {
+  const next = Array.isArray(views) ? views : [];
+  const changed = JSON.stringify(next.map((v) => v.name)) !== JSON.stringify(savedViews.map((v) => v.name));
+  savedViews = next;
+  if (changed) buildMenu();
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     title: 'Flock',
@@ -111,8 +124,44 @@ function buildMenu() {
         {
           label: 'Focus Mode',
           type: 'checkbox',
+          checked: focusModeOn,
           accelerator: 'CmdOrCtrl+Shift+F',
-          click: (item) => mainWindow && mainWindow.webContents.send('focus-mode', item.checked),
+          click: (item) => {
+            focusModeOn = item.checked;
+            if (mainWindow) mainWindow.webContents.send('focus-mode', item.checked);
+          },
+        },
+        { type: 'separator' },
+        {
+          label: 'Save View…',
+          click: () => {
+            if (!mainWindow) return;
+            mainWindow.show();
+            mainWindow.webContents.send('save-view');
+          },
+        },
+        {
+          label: 'Load View',
+          submenu: savedViews.length
+            ? savedViews.map((v) => ({
+                label: v.name,
+                // Send the name, not the view itself — the renderer holds the
+                // freshest copy, and a same-name overwrite mustn't go stale here.
+                click: () => {
+                  if (!mainWindow) return;
+                  mainWindow.show();
+                  mainWindow.webContents.send('load-view', v.name);
+                },
+              }))
+            : [{ label: 'No Saved Views', enabled: false }],
+        },
+        {
+          label: 'Delete View',
+          visible: savedViews.length > 0,
+          submenu: savedViews.map((v) => ({
+            label: v.name,
+            click: () => mainWindow && mainWindow.webContents.send('delete-view', v.name),
+          })),
         },
         { type: 'separator' },
         { role: 'togglefullscreen' },
@@ -170,6 +219,7 @@ ipcMain.on('save-prefs', (event, data) => {
   } catch (_) {
     // best-effort; ignore write failures
   }
+  syncViewsMenu(data && data.views);
   // Prefs change in two windows now — keep whichever didn't save in step
   for (const win of [mainWindow, prefsWindow]) {
     if (win && !win.isDestroyed() && win.webContents !== event.sender) {
@@ -192,6 +242,7 @@ function watchPrefsFile() {
           if (raw === lastSavedPrefs) return;
           lastSavedPrefs = raw;
           const parsed = JSON.parse(raw);
+          syncViewsMenu(parsed.views);
           mainWindow.webContents.send('prefs-changed', parsed);
           if (prefsWindow) prefsWindow.webContents.send('prefs-changed', parsed);
         } catch (_) {
@@ -207,13 +258,19 @@ function watchPrefsFile() {
 /* ----------------------------- Terminals -------------------------------- */
 
 ipcMain.handle('pty-create', (event, { id, cols, rows, cwd }) => {
-  const term = pty.spawn(defaultShell, [], {
+  const opts = {
     name: 'xterm-256color',
     cols: cols || 80,
     rows: rows || 24,
-    cwd: cwd || os.homedir(),
     env: { ...process.env, TERM: 'xterm-256color', COLORTERM: 'truecolor', TERM_PROGRAM: 'Flock' },
-  });
+  };
+  let term;
+  try {
+    term = pty.spawn(defaultShell, [], { ...opts, cwd: cwd || os.homedir() });
+  } catch (_) {
+    // A saved folder can vanish between sessions — open at home instead
+    term = pty.spawn(defaultShell, [], { ...opts, cwd: os.homedir() });
+  }
 
   const sender = event.sender;
   term.onData((data) => { if (!sender.isDestroyed()) sender.send('pty-data', { id, data }); });
@@ -345,7 +402,9 @@ function sampleLocations() {
         const id = pidToId.get(pid);
         if (!id) continue;
         const dir = line.slice(1);
-        mainWindow.webContents.send('pty-location', { id, dir: tildify(dir), branch: gitBranch(dir) });
+        // rawDir keeps the full path — saved views need it, since a shell
+        // can't be spawned in a tildified one
+        mainWindow.webContents.send('pty-location', { id, dir: tildify(dir), rawDir: dir, branch: gitBranch(dir) });
       }
     }
   });
@@ -437,6 +496,10 @@ app.whenReady().then(() => {
     const dockIcon = nativeImage.createFromPath(iconPath);
     if (!dockIcon.isEmpty()) app.dock.setIcon(dockIcon);
   }
+  try {
+    savedViews = JSON.parse(fs.readFileSync(prefsPath, 'utf8')).views || [];
+    if (!Array.isArray(savedViews)) savedViews = [];
+  } catch (_) { /* no prefs yet */ }
   buildMenu();
   createWindow();
   watchPrefsFile();

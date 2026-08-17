@@ -1316,6 +1316,67 @@ body.focus-mode #tabbar .pen-header.busy {
   z-index: 120;
 }
 
+/* --- Save View dialog --- */
+#view-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+#view-dialog.hidden {
+  display: none;
+}
+
+.view-dialog-card {
+  width: 320px;
+  padding: 16px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.view-dialog-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+#view-dialog-hint {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+#view-dialog-name {
+  padding: 7px 9px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--input-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  outline: none;
+}
+
+#view-dialog-name:focus {
+  border-color: var(--accent);
+}
+
+.view-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 /* Fixed grid: first cell inset for the traffic lights; empty cells are
    draggable so the window can still be moved. */
 #field.mode-fixed .cell:first-child .pen-header {
