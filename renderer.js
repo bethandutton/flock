@@ -64,6 +64,9 @@ function stopMatrix() {
 }
 const welcomeNewBtn = document.getElementById('welcome-new');
 const welcomeOpenBtn = document.getElementById('welcome-open');
+const welcomeRecentsWrap = document.getElementById('welcome-recents-wrap');
+const welcomeRecentsBtn = document.getElementById('welcome-recents');
+const welcomeRecentsMenu = document.getElementById('welcome-recents-menu');
 
 const addEl = document.getElementById('add');
 const addBtn = document.getElementById('add-btn');
@@ -290,7 +293,7 @@ function addPen(opts = {}) {
 
 function openIn(dir) {
   const name = dir.split('/').filter(Boolean).pop() || dir;
-  prefs.recentFolders = [dir, ...prefs.recentFolders.filter((d) => d !== dir)].slice(0, 5);
+  prefs.recentFolders = [dir, ...prefs.recentFolders.filter((d) => d !== dir)].slice(0, 10);
   persist();
   addPen({ cwd: dir, title: name });
 }
@@ -528,6 +531,8 @@ function makeEmptyCell() {
 
 function renderField() {
   kanbanCols = null;
+  welcomeRecentsBtn.classList.toggle('hidden', prefs.recentFolders.length === 0);
+  welcomeRecentsMenu.classList.add('hidden');
   fieldEl.querySelectorAll('.cell').forEach((c) => c.remove());
   for (const pen of pens.values()) if (pen.el.parentElement) pen.el.remove();
   if (addEl.parentElement) addEl.remove();
@@ -727,9 +732,8 @@ window.flock.onLocation(({ id, dir, branch }) => {
 
 /* ------------------------------ Add menu -------------------------------- */
 
-function renderRecents() {
-  addRecentsEl.querySelectorAll('button').forEach((b) => b.remove());
-  addRecentsEl.classList.toggle('hidden', prefs.recentFolders.length === 0);
+function renderRecents(container, menuEl) {
+  container.querySelectorAll('button').forEach((b) => b.remove());
   for (const dir of prefs.recentFolders) {
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -741,14 +745,15 @@ function renderRecents() {
     path.textContent = dir.replace(/^\/Users\/[^/]+/, '~');
     btn.append(name, path);
     btn.title = dir;
-    btn.addEventListener('click', () => { addMenu.classList.add('hidden'); openIn(dir); });
-    addRecentsEl.appendChild(btn);
+    btn.addEventListener('click', () => { menuEl.classList.add('hidden'); openIn(dir); });
+    container.appendChild(btn);
   }
 }
 
 addBtn.addEventListener('click', (e) => {
   e.stopPropagation();
-  renderRecents();
+  renderRecents(addRecentsEl, addMenu);
+  addRecentsEl.classList.toggle('hidden', prefs.recentFolders.length === 0);
   addMenu.classList.toggle('hidden');
   // Near the right edge the menu would run off screen — open it leftwards
   if (!addMenu.classList.contains('hidden')) {
@@ -758,10 +763,18 @@ addBtn.addEventListener('click', (e) => {
 });
 addNewBtn.addEventListener('click', () => { addMenu.classList.add('hidden'); addPen(); });
 addOpenBtn.addEventListener('click', () => { addMenu.classList.add('hidden'); openFolder(); });
-document.addEventListener('click', (e) => { if (!addEl.contains(e.target)) addMenu.classList.add('hidden'); });
+document.addEventListener('click', (e) => {
+  if (!addEl.contains(e.target)) addMenu.classList.add('hidden');
+  if (!welcomeRecentsWrap.contains(e.target)) welcomeRecentsMenu.classList.add('hidden');
+});
 
 welcomeNewBtn.addEventListener('click', () => addPen());
 welcomeOpenBtn.addEventListener('click', () => openFolder());
+welcomeRecentsBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  renderRecents(welcomeRecentsMenu, welcomeRecentsMenu);
+  welcomeRecentsMenu.classList.toggle('hidden');
+});
 
 /* Focus mode: terminals that are mid-task (still streaming output) blur away;
    the ones sitting quiet or asking for approval stay crisp. */
@@ -865,6 +878,7 @@ window.addEventListener('keydown', (e) => {
   else if (e.key === 'Escape') {
     if (prefs.layout === 'dashboard' && dashboardZoom) { dashboardZoom = null; renderField(); }
     addMenu.classList.add('hidden');
+    welcomeRecentsMenu.classList.add('hidden');
     closeCtxMenu();
   }
 });
