@@ -1264,11 +1264,29 @@ body.focus-mode #tabbar .pen-header.busy {
   color: var(--text-muted);
 }
 
+.menu-recent-row {
+  display: flex;
+  align-items: center;
+  max-width: 280px;
+}
+
 .menu-recent {
   display: flex;
   align-items: baseline;
   gap: 8px;
-  max-width: 280px;
+  flex: 1;
+  min-width: 0;
+}
+
+.menu-recent-remove {
+  flex: none;
+  padding: 7px 8px;
+  color: var(--text-muted);
+  line-height: 1;
+}
+
+.menu-recent-remove:hover {
+  color: var(--text);
 }
 
 .menu-recent .recent-path {

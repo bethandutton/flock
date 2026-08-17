@@ -733,8 +733,10 @@ window.flock.onLocation(({ id, dir, branch }) => {
 /* ------------------------------ Add menu -------------------------------- */
 
 function renderRecents(container, menuEl) {
-  container.querySelectorAll('button').forEach((b) => b.remove());
+  container.querySelectorAll('.menu-recent-row').forEach((r) => r.remove());
   for (const dir of prefs.recentFolders) {
+    const row = document.createElement('div');
+    row.className = 'menu-recent-row';
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'menu-recent';
@@ -746,7 +748,25 @@ function renderRecents(container, menuEl) {
     btn.append(name, path);
     btn.title = dir;
     btn.addEventListener('click', () => { menuEl.classList.add('hidden'); openIn(dir); });
-    container.appendChild(btn);
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'menu-recent-remove';
+    remove.textContent = '×';
+    remove.title = 'Remove from Recents';
+    remove.setAttribute('aria-label', `Remove ${dir} from Recents`);
+    remove.addEventListener('click', (e) => {
+      e.stopPropagation();
+      prefs.recentFolders = prefs.recentFolders.filter((d) => d !== dir);
+      persist();
+      renderRecents(container, menuEl);
+      if (prefs.recentFolders.length === 0) {
+        menuEl.classList.add('hidden');
+        welcomeRecentsBtn.classList.add('hidden');
+        addRecentsEl.classList.add('hidden');
+      }
+    });
+    row.append(btn, remove);
+    container.appendChild(row);
   }
 }
 
