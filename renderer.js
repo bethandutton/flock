@@ -294,7 +294,7 @@ function addPen(opts = {}) {
 
 function openIn(dir) {
   const name = dir.split('/').filter(Boolean).pop() || dir;
-  prefs.recentFolders = [dir, ...prefs.recentFolders.filter((d) => d !== dir)].slice(0, 10);
+  prefs.recentFolders = [dir, ...prefs.recentFolders.filter((d) => d !== dir)];
   persist();
   addPen({ cwd: dir, title: name });
 }
@@ -734,11 +734,42 @@ window.flock.onLocation(({ id, dir, rawDir, branch }) => {
 
 /* ------------------------------ Add menu -------------------------------- */
 
+const SEARCH_FROM = 6;
+
 function renderRecents(container, menuEl) {
-  container.querySelectorAll('.menu-recent-row').forEach((r) => r.remove());
+  container.querySelectorAll('.menu-recent-row, .menu-search, .menu-empty').forEach((r) => r.remove());
+  if (prefs.recentFolders.length >= SEARCH_FROM) {
+    const search = document.createElement('input');
+    search.type = 'search';
+    search.className = 'menu-search';
+    search.placeholder = 'Search folders';
+    search.spellcheck = false;
+    search.setAttribute('aria-label', 'Search recent folders');
+    const empty = document.createElement('div');
+    empty.className = 'menu-label menu-empty hidden';
+    empty.textContent = 'No matching folders';
+    search.addEventListener('input', () => {
+      const q = search.value.trim().toLowerCase();
+      let shown = 0;
+      for (const row of container.querySelectorAll('.menu-recent-row')) {
+        const hit = !q || row.dataset.dir.toLowerCase().includes(q);
+        row.classList.toggle('hidden', !hit);
+        if (hit) shown++;
+      }
+      empty.classList.toggle('hidden', shown > 0);
+    });
+    search.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const first = container.querySelector('.menu-recent-row:not(.hidden) .menu-recent');
+      if (first) first.click();
+    });
+    container.append(search, empty);
+    requestAnimationFrame(() => search.focus());
+  }
   for (const dir of prefs.recentFolders) {
     const row = document.createElement('div');
     row.className = 'menu-recent-row';
+    row.dataset.dir = dir;
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'menu-recent';

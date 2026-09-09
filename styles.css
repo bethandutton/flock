@@ -1270,6 +1270,32 @@ body.focus-mode #tabbar .pen-header.busy {
   max-width: 280px;
 }
 
+.menu-recent-row.hidden,
+.menu-empty.hidden {
+  display: none;
+}
+
+/* Stays put while a long list of folders scrolls underneath it */
+.menu-search {
+  position: sticky;
+  top: -4px;
+  z-index: 1;
+  margin: 2px 6px 4px;
+  padding: 6px 9px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--input-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.menu-search:focus {
+  border-color: var(--accent);
+}
+
 .menu-recent {
   display: flex;
   align-items: baseline;
