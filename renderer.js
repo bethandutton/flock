@@ -188,7 +188,7 @@ function makePen({ cwd, title } = {}) {
   term.open(termEl);
   attachGpuRenderer(term);
 
-  const pen = { id, el, headerEl, titleEl, locationEl, statusEl, termEl, term, fit, customTitle: false, editing: false, pinned: false, fontSize: BASE_FONT };
+  const pen = { id, el, headerEl, titleEl, locationEl, statusEl, termEl, term, fit, cwd, customTitle: false, editing: false, pinned: false, fontSize: BASE_FONT };
   pens.set(id, pen);
 
   // Refit whenever the terminal's box changes for any reason — column drags,
@@ -292,10 +292,25 @@ function addPen(opts = {}) {
   requestAnimationFrame(() => { pen.term.focus(); pen.el.scrollIntoView({ inline: 'end', behavior: 'smooth' }); });
 }
 
+function penIn(dir) {
+  for (const pen of pens.values()) {
+    if (pen.cwd === dir || pen.dir === dir) return pen;
+  }
+  return null;
+}
+
 function openIn(dir) {
   const name = dir.split('/').filter(Boolean).pop() || dir;
   prefs.recentFolders = [dir, ...prefs.recentFolders.filter((d) => d !== dir)];
   persist();
+  // The same folder (and so the same branch) shouldn't graze in two pens —
+  // go to the one that's already open instead
+  const existing = penIn(dir);
+  if (existing) {
+    setFocused(existing.id);
+    requestAnimationFrame(() => { existing.term.focus(); existing.el.scrollIntoView({ inline: 'nearest', behavior: 'smooth' }); });
+    return;
+  }
   addPen({ cwd: dir, title: name });
 }
 
