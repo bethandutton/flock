@@ -403,7 +403,7 @@ body.fullscreen #field.mode-fixed .cell:first-child .cell-empty {
   top: calc(100% + 6px);
   left: 0;
   z-index: 60;
-  max-height: 260px;
+  max-height: 420px;
   overflow-y: auto;
 }
 
@@ -1252,6 +1252,18 @@ body.focus-mode #tabbar .pen-header.busy {
   display: none;
 }
 
+/* New and Open Folder share a row at the top of the menu */
+.menu-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.menu-actions button {
+  flex: 1;
+  white-space: nowrap;
+  text-align: center;
+}
+
 .menu-sep {
   height: 1px;
   margin: 4px 6px;
@@ -1267,7 +1279,13 @@ body.focus-mode #tabbar .pen-header.busy {
 .menu-recent-row {
   display: flex;
   align-items: center;
-  max-width: 280px;
+  width: 296px;
+}
+
+/* Keyboard highlight — looks the same as a hover so the two can't be confused */
+.menu-recent-row.menu-active .menu-recent,
+.menu button.menu-active {
+  background: var(--hover);
 }
 
 .menu-recent-row.hidden,
@@ -1302,6 +1320,16 @@ body.focus-mode #tabbar .pen-header.busy {
   gap: 8px;
   flex: 1;
   min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* Both halves of a row stay on one line — the path gives way first */
+.menu-recent .recent-name {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .menu-recent-remove {
@@ -1316,6 +1344,8 @@ body.focus-mode #tabbar .pen-header.busy {
 }
 
 .menu-recent .recent-path {
+  flex: 0 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1328,7 +1358,7 @@ body.focus-mode #tabbar .pen-header.busy {
   top: 38px;
   left: 4px;
   z-index: 60;
-  max-height: 260px;
+  max-height: 420px;
   overflow-y: auto;
 }
 
