@@ -750,6 +750,68 @@ window.flock.onLocation(({ id, dir, rawDir, branch }) => {
 /* ------------------------------ Add menu -------------------------------- */
 
 const SEARCH_FROM = 6;
+const MENU_MAX = 420;
+
+/* Menus grow to fill the window rather than stopping at a fixed height, so a
+   long list of folders is only ever a scroll away, never cut short. */
+function fitMenu(menuEl, top) {
+  menuEl.style.maxHeight = `${Math.max(140, Math.min(MENU_MAX, top))}px`;
+}
+
+/* Arrow keys walk a menu and Enter opens what's highlighted, so the whole
+   dropdown works without reaching for the mouse. */
+function menuItems(menuEl) {
+  return [...menuEl.querySelectorAll(
+    ':scope > button:not(.hidden), .menu-actions > button:not(.hidden), .menu-recent-row:not(.hidden)'
+  )];
+}
+
+function highlightMenuItem(menuEl, item) {
+  menuEl.querySelectorAll('.menu-active').forEach((el) => el.classList.remove('menu-active'));
+  if (!item) return;
+  item.classList.add('menu-active');
+  item.scrollIntoView({ block: 'nearest' });
+}
+
+function moveMenuHighlight(menuEl, step) {
+  const items = menuItems(menuEl);
+  if (!items.length) return;
+  const at = items.indexOf(menuEl.querySelector('.menu-active'));
+  const next = at === -1 ? (step > 0 ? 0 : items.length - 1) : (at + step + items.length) % items.length;
+  highlightMenuItem(menuEl, items[next]);
+}
+
+function wireMenuKeys(menuEl) {
+  menuEl.tabIndex = -1;
+  menuEl.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      moveMenuHighlight(menuEl, e.key === 'ArrowDown' ? 1 : -1);
+      return;
+    }
+    if (e.key === 'Escape') {
+      menuEl.classList.add('hidden');
+      return;
+    }
+    if (e.key !== 'Enter') return;
+    // Typing in the search box and hitting Enter takes the best match
+    const searching = e.target.classList.contains('menu-search');
+    const item = menuEl.querySelector('.menu-active')
+      || (searching ? menuItems(menuEl).find((i) => i.classList.contains('menu-recent-row')) : null);
+    const btn = item && (item.matches('button') ? item : item.querySelector('.menu-recent'));
+    if (btn) {
+      e.preventDefault();
+      btn.click();
+    }
+  });
+}
+
+/* Keys land in the menu rather than the terminal underneath it */
+function focusMenu(menuEl) {
+  highlightMenuItem(menuEl, null);
+  const search = menuEl.querySelector('.menu-search');
+  requestAnimationFrame(() => (search || menuEl).focus());
+}
 
 function renderRecents(container, menuEl) {
   container.querySelectorAll('.menu-recent-row, .menu-search, .menu-empty').forEach((r) => r.remove());
@@ -773,13 +835,8 @@ function renderRecents(container, menuEl) {
       }
       empty.classList.toggle('hidden', shown > 0);
     });
-    search.addEventListener('keydown', (e) => {
-      if (e.key !== 'Enter') return;
-      const first = container.querySelector('.menu-recent-row:not(.hidden) .menu-recent');
-      if (first) first.click();
-    });
+    search.addEventListener('input', () => highlightMenuItem(menuEl, null));
     container.append(search, empty);
-    requestAnimationFrame(() => search.focus());
   }
   for (const dir of prefs.recentFolders) {
     const row = document.createElement('div');
@@ -789,6 +846,7 @@ function renderRecents(container, menuEl) {
     btn.type = 'button';
     btn.className = 'menu-recent';
     const name = document.createElement('span');
+    name.className = 'recent-name';
     name.textContent = dir.split('/').filter(Boolean).pop() || dir;
     const path = document.createElement('span');
     path.className = 'recent-path';
@@ -827,6 +885,8 @@ addBtn.addEventListener('click', (e) => {
   if (!addMenu.classList.contains('hidden')) {
     addMenu.classList.remove('flip');
     addMenu.classList.toggle('flip', addMenu.getBoundingClientRect().right > window.innerWidth - 8);
+    fitMenu(addMenu, window.innerHeight - addMenu.getBoundingClientRect().top - 14);
+    focusMenu(addMenu);
   }
 });
 addNewBtn.addEventListener('click', () => { addMenu.classList.add('hidden'); addPen(); });
@@ -847,11 +907,15 @@ welcomeRecentsBtn.addEventListener('click', (e) => {
     // or open upwards when the window is too short below
     const btn = welcomeRecentsBtn.getBoundingClientRect();
     const below = window.innerHeight - btn.bottom - 14;
-    const up = below < 120 && btn.top - 14 > below;
+    const up = below < 160 && btn.top - 14 > below;
     welcomeRecentsMenu.classList.toggle('drop-up', up);
-    welcomeRecentsMenu.style.maxHeight = `${Math.min(260, up ? btn.top - 14 : below)}px`;
+    fitMenu(welcomeRecentsMenu, up ? btn.top - 14 : below);
+    focusMenu(welcomeRecentsMenu);
   }
 });
+
+wireMenuKeys(addMenu);
+wireMenuKeys(welcomeRecentsMenu);
 
 /* ------------------------------- Views ----------------------------------- */
 
