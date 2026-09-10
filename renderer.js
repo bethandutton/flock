@@ -292,25 +292,20 @@ function addPen(opts = {}) {
   requestAnimationFrame(() => { pen.term.focus(); pen.el.scrollIntoView({ inline: 'end', behavior: 'smooth' }); });
 }
 
-function penIn(dir) {
+// How many pens are sitting in a folder right now — a pen counts by where its
+// shell actually is, so one that's been cd'd elsewhere no longer does
+function pensIn(dir) {
+  let n = 0;
   for (const pen of pens.values()) {
-    if (pen.cwd === dir || pen.dir === dir) return pen;
+    if ((pen.dir || pen.cwd) === dir) n++;
   }
-  return null;
+  return n;
 }
 
 function openIn(dir) {
   const name = dir.split('/').filter(Boolean).pop() || dir;
   prefs.recentFolders = [dir, ...prefs.recentFolders.filter((d) => d !== dir)];
   persist();
-  // The same folder (and so the same branch) shouldn't graze in two pens —
-  // go to the one that's already open instead
-  const existing = penIn(dir);
-  if (existing) {
-    setFocused(existing.id);
-    requestAnimationFrame(() => { existing.term.focus(); existing.el.scrollIntoView({ inline: 'nearest', behavior: 'smooth' }); });
-    return;
-  }
   addPen({ cwd: dir, title: name });
 }
 
