@@ -815,11 +815,15 @@ function focusMenu(menuEl) {
 
 function renderRecents(container, menuEl) {
   container.querySelectorAll('.menu-recent-row, .menu-search, .menu-empty').forEach((r) => r.remove());
-  if (prefs.recentFolders.length >= SEARCH_FROM) {
+  const searchable = prefs.recentFolders.length >= SEARCH_FROM;
+  // The search box takes the heading's place rather than sitting under it
+  const label = container.querySelector('#add-recents-label');
+  if (label) label.classList.toggle('hidden', searchable);
+  if (searchable) {
     const search = document.createElement('input');
     search.type = 'search';
     search.className = 'menu-search';
-    search.placeholder = 'Search folders';
+    search.placeholder = 'Search recent folders';
     search.spellcheck = false;
     search.setAttribute('aria-label', 'Search recent folders');
     const empty = document.createElement('div');

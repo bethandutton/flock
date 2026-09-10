@@ -1289,6 +1289,7 @@ body.focus-mode #tabbar .pen-header.busy {
 }
 
 .menu-recent-row.hidden,
+.menu-label.hidden,
 .menu-empty.hidden {
   display: none;
 }
