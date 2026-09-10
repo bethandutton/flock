@@ -852,11 +852,9 @@ function renderRecents(container, menuEl) {
     const name = document.createElement('span');
     name.className = 'recent-name';
     name.textContent = dir.split('/').filter(Boolean).pop() || dir;
-    const path = document.createElement('span');
-    path.className = 'recent-path';
-    path.textContent = dir.replace(/^\/Users\/[^/]+/, '~');
-    btn.append(name, path);
-    btn.title = dir;
+    btn.append(name);
+    // The row shows only the folder name — hovering reveals where it lives
+    btn.title = dir.replace(/^\/Users\/[^/]+/, '~');
     btn.addEventListener('click', () => { menuEl.classList.add('hidden'); openIn(dir); });
     const remove = document.createElement('button');
     remove.type = 'button';

@@ -1317,15 +1317,13 @@ body.focus-mode #tabbar .pen-header.busy {
 
 .menu-recent {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
+  align-items: center;
   flex: 1;
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
 }
 
-/* Both halves of a row stay on one line — the path gives way first */
 .menu-recent .recent-name {
   flex: 0 1 auto;
   min-width: 0;
@@ -1342,16 +1340,6 @@ body.focus-mode #tabbar .pen-header.busy {
 
 .menu-recent-remove:hover {
   color: var(--text);
-}
-
-.menu-recent .recent-path {
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 11px;
-  color: var(--text-muted);
 }
 
 #add-menu {
