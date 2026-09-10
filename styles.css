@@ -1331,6 +1331,21 @@ body.focus-mode #tabbar .pen-header.busy {
   text-overflow: ellipsis;
 }
 
+/* Already grazing in a pen — dimmed as a warning, still perfectly clickable */
+.menu-recent-row.open .menu-recent {
+  color: var(--text-muted);
+}
+
+.recent-count {
+  flex: none;
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 10px;
+  color: var(--text-muted);
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+}
+
 .menu-recent-remove {
   flex: none;
   padding: 7px 8px;

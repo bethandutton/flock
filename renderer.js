@@ -848,8 +848,21 @@ function renderRecents(container, menuEl) {
     name.className = 'recent-name';
     name.textContent = dir.split('/').filter(Boolean).pop() || dir;
     btn.append(name);
+    // A folder that's already open is dimmed and says how many pens are in it —
+    // a nudge, not a block: opening it again is still allowed
+    const open = pensIn(dir);
+    row.classList.toggle('open', open > 0);
+    if (open > 0) {
+      const count = document.createElement('span');
+      count.className = 'recent-count';
+      count.textContent = `${open} open`;
+      btn.append(count);
+    }
     // The row shows only the folder name — hovering reveals where it lives
-    btn.title = dir.replace(/^\/Users\/[^/]+/, '~');
+    const where = dir.replace(/^\/Users\/[^/]+/, '~');
+    btn.title = open > 0
+      ? `${where}\nAlready open in ${open} ${open === 1 ? 'pen' : 'pens'} — this opens another`
+      : where;
     btn.addEventListener('click', () => { menuEl.classList.add('hidden'); openIn(dir); });
     const remove = document.createElement('button');
     remove.type = 'button';
