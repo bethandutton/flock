@@ -34,6 +34,10 @@
           <span class="layout-name">Dashboard</span>
           <span class="layout-hint">Cards with live status</span>
         </button>
+        <button class="layout-opt" data-layout="chat" type="button">
+          <span class="layout-name">Chat</span>
+          <span class="layout-hint">A list down the side, like Messages</span>
+        </button>
       </div>
       <div class="grid-size hidden" id="grid-size">
         <label class="custom-field">Rows
@@ -79,6 +83,14 @@
       <label class="toggle-row">
         <span class="toggle-label">Show activity bar<small>CPU &amp; memory per terminal</small></span>
         <input type="checkbox" id="show-activity" />
+      </label>
+      <label class="toggle-row">
+        <span class="toggle-label">Start an agent<small>When you open a folder in Chat</small></span>
+        <select id="chat-agent">
+          <option value="none">Nothing</option>
+          <option value="claude">Claude Code</option>
+          <option value="codex">Codex</option>
+        </select>
       </label>
     </div>
 

@@ -92,6 +92,8 @@ const prefs = {
   lineHeight: 1,
   dashView: 'cards',
   showActivity: false,
+  chatAgent: 'none',
+  chatWidth: 250,
   recentFolders: [],
   views: [],
 };
@@ -140,7 +142,7 @@ function attachGpuRenderer(term) {
 
 /* ------------------------------- Pens ----------------------------------- */
 
-function makePen({ cwd, title } = {}) {
+function makePen({ cwd, title, command } = {}) {
   const id = `p${++counter}`;
 
   const el = document.createElement('div');
@@ -211,8 +213,19 @@ function makePen({ cwd, title } = {}) {
   });
 
   term.onData((data) => window.flock.sendInput(id, data));
+  /* In Chat the agent names the conversation (Claude Code sets the title to
+     what it's working on), unless you've renamed it yourself. Its leading
+     spinner/status symbol is dropped so the name reads cleanly. */
   term.onTitleChange((tt) => {
-    if (!pen.customTitle && tt) { titleEl.textContent = tt; titleEl.title = tt; }
+    // Claude Code swaps its working spinner for ✳ when it stops and waits —
+    // in Chat that's an unread message, unless you're already looking at it
+    const waiting = tt.startsWith('✳');
+    if (prefs.layout === 'chat' && waiting && pen.lastRawTitle && !pen.lastRawTitle.startsWith('✳')
+        && !(focusedId === id && document.hasFocus()) && !pen.muted) markAttention(pen);
+    pen.lastRawTitle = tt;
+    const agentMayRename = prefs.layout === 'chat' && !pen.renamedByYou;
+    if (prefs.layout === 'chat') tt = tt.replace(/^[^\p{L}\p{N}]+/u, '');
+    if ((!pen.customTitle || agentMayRename) && tt) { titleEl.textContent = tt; titleEl.title = tt; }
   });
 
   /* CLIs ring the terminal bell when they want a human (Claude Code does this
@@ -269,7 +282,10 @@ function makePen({ cwd, title } = {}) {
   });
 
   applyActivityVisibility(pen);
-  window.flock.createTerminal(id, term.cols || 80, term.rows || 24, cwd);
+  // The shell reads typed-ahead input once it's ready, so the command can go
+  // in as soon as the shell exists
+  window.flock.createTerminal(id, term.cols || 80, term.rows || 24, cwd)
+    .then(() => { if (command) window.flock.sendInput(id, `${command}\r`); });
   return pen;
 }
 
@@ -302,11 +318,15 @@ function pensIn(dir) {
   return n;
 }
 
+// What Chat types into a freshly opened folder, by the agent chosen in Preferences
+const AGENTS = { claude: 'claude', codex: 'codex' };
+
 function openIn(dir) {
   const name = dir.split('/').filter(Boolean).pop() || dir;
   prefs.recentFolders = [dir, ...prefs.recentFolders.filter((d) => d !== dir)];
   persist();
-  addPen({ cwd: dir, title: name });
+  const agent = prefs.layout === 'chat' && AGENTS[prefs.chatAgent];
+  addPen({ cwd: dir, title: name, command: agent || undefined });
 }
 
 async function openFolder() {
@@ -323,6 +343,7 @@ function setFocused(id) {
   }
   const pen = pens.get(id);
   if (pen && document.hasFocus()) clearAttention(pen);
+  if (prefs.layout === 'chat') updateChatRows();
 }
 
 function markAttention(pen) {
@@ -330,12 +351,14 @@ function markAttention(pen) {
   pen.el.classList.add('attention');
   pen.headerEl.classList.add('attention');
   if (pen.cardEl && pen.cardEl.isConnected) pen.cardEl.classList.add('attention');
+  if (pen.chatRowEl && pen.chatRowEl.isConnected) pen.chatRowEl.classList.add('attention');
 }
 function clearAttention(pen) {
   pen.attention = false;
   pen.el.classList.remove('attention');
   pen.headerEl.classList.remove('attention');
   if (pen.cardEl && pen.cardEl.isConnected) pen.cardEl.classList.remove('attention');
+  if (pen.chatRowEl && pen.chatRowEl.isConnected) pen.chatRowEl.classList.remove('attention');
 }
 window.addEventListener('focus', () => {
   const pen = pens.get(focusedId);
@@ -367,6 +390,12 @@ fieldEl.addEventListener('wheel', (e) => {
   e.preventDefault();
   e.stopPropagation();
 }, { capture: true, passive: false });
+
+// Focusing a terminal can nudge the field sideways to bring its hidden
+// input into view. Chat has nothing to scroll to, so undo it.
+fieldEl.addEventListener('scroll', () => {
+  if (prefs.layout === 'chat' && fieldEl.scrollLeft) fieldEl.scrollLeft = 0;
+});
 
 function syncScrollbarGutter() {
   const gutter = prefs.layout === 'compact' ? Math.max(0, fieldEl.offsetHeight - fieldEl.clientHeight) : 0;
@@ -463,6 +492,7 @@ function startTitleEdit(pen) {
       const text = titleEl.textContent.trim();
       titleEl.textContent = text || 'Terminal';
       pen.customTitle = true;
+      if (text !== original) pen.renamedByYou = true;
     } else {
       titleEl.textContent = original;
     }
@@ -529,6 +559,124 @@ function updateDashCards() {
   }
 }
 
+/* -------------------------------- Chat ---------------------------------- */
+
+/* A messages-style list of pens down the left, the chosen terminal on the
+   right. Each row previews the pen's latest line, like a conversation's last
+   message. */
+
+let chatTimer = null;
+let chatQuery = '';
+
+// The bottom-most line with real words in it. Claude Code draws boxes and
+// rules around its prompt, so lines made only of those don't count.
+function lastLine(pen) {
+  const buf = pen.term.buffer.active;
+  for (let y = buf.baseY + buf.cursorY, seen = 0; y >= 0 && seen < 60; y--, seen++) {
+    const line = buf.getLine(y);
+    if (!line) continue;
+    const raw = line.translateToString(true);
+    // The shell's own prompt (you@your-mac ~/folder) says nothing new
+    if (/^\s*[\w.-]+@[\w.-]+/.test(raw)) continue;
+    const text = raw.replace(/[─━│┃╭╮╰╯┌┐└┘├┤┬┴┼═║▀-▟>❯$%#·•…\s]+/g, ' ').trim();
+    if (/[A-Za-z].*[A-Za-z].*[A-Za-z]/.test(text)) return text;
+  }
+  return '';
+}
+
+function chatTime(at) {
+  if (!at) return '';
+  const mins = Math.floor((Date.now() - at) / 60000);
+  if (mins < 1) return 'now';
+  if (mins < 60) return `${mins}m`;
+  const d = new Date(at);
+  if (d.toDateString() === new Date().toDateString()) {
+    return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  }
+  return d.toLocaleDateString('en-GB', { weekday: 'short' });
+}
+
+function makeChatRow(pen) {
+  const row = document.createElement('div');
+  row.className = 'chat-row';
+  row.innerHTML = `
+    <div class="chat-body">
+      <div class="chat-top"><span class="chat-name"></span><span class="chat-time"></span></div>
+      <div class="chat-preview"></div>
+    </div>`;
+  row.addEventListener('mousedown', () => {
+    setFocused(pen.id);
+    requestAnimationFrame(() => pen.term.focus());
+  });
+  row.addEventListener('dblclick', () => startTitleEdit(pen));
+  row.addEventListener('contextmenu', (e) => { e.preventDefault(); openCtxMenu(pen, e.clientX, e.clientY); });
+  pen.chatRowEl = row;
+  return row;
+}
+
+function updateChatRows() {
+  const q = chatQuery.trim().toLowerCase();
+  for (const pen of pens.values()) {
+    const row = pen.chatRowEl;
+    if (!row || !row.isConnected) continue;
+    const name = pen.titleEl.textContent;
+    const preview = pen.attention ? 'Needs you' : lastLine(pen) || pen.locationEl.textContent;
+    row.querySelector('.chat-name').textContent = name;
+    row.querySelector('.chat-time').textContent = chatTime(pen.lastAt);
+    row.querySelector('.chat-preview').textContent = preview;
+    row.title = pen.locationEl.textContent;
+    row.classList.toggle('selected', pen.id === focusedId);
+    row.classList.toggle('attention', !!pen.attention);
+    row.classList.toggle('hidden', !!q && !`${name} ${pen.locationEl.textContent}`.toLowerCase().includes(q));
+  }
+}
+
+function makeChatList() {
+  const list = document.createElement('div');
+  list.className = 'cell chat-list';
+  list.innerHTML = `
+    <div class="chat-list-head"><input class="chat-search" type="search" placeholder="Search" spellcheck="false" /></div>
+    <div class="chat-rows"></div>
+    <div class="pen-resizer chat-resizer"></div>`;
+  list.style.flexBasis = `${prefs.chatWidth}px`;
+  const search = list.querySelector('.chat-search');
+  search.value = chatQuery;
+  search.addEventListener('input', () => { chatQuery = search.value; updateChatRows(); });
+  search.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { search.value = chatQuery = ''; updateChatRows(); search.blur(); }
+  });
+  list.querySelector('.chat-list-head').appendChild(addEl);
+  const resizerEl = list.querySelector('.chat-resizer');
+  resizerEl.addEventListener('mousedown', (e) => startChatResize(e, list, resizerEl));
+  const rows = list.querySelector('.chat-rows');
+  for (const id of order) rows.appendChild(makeChatRow(pens.get(id)));
+  return list;
+}
+
+// Same drag as a pen's edge; the terminal beside it refits on its own as
+// its box changes
+function startChatResize(e, list, resizerEl) {
+  e.preventDefault();
+  const startX = e.clientX;
+  const startWidth = list.getBoundingClientRect().width;
+  resizerEl.classList.add('dragging');
+  document.body.style.cursor = 'col-resize';
+
+  function onMove(ev) {
+    prefs.chatWidth = Math.min(480, Math.max(180, startWidth + (ev.clientX - startX)));
+    list.style.flexBasis = `${prefs.chatWidth}px`;
+  }
+  function onUp() {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    resizerEl.classList.remove('dragging');
+    document.body.style.cursor = '';
+    persist();
+  }
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
 // New pens always fill the first gap, so only that one carries the + button
 function makeEmptyCell(withAdd) {
   const empty = document.createElement('div');
@@ -552,6 +700,7 @@ function renderField() {
   fieldEl.classList.toggle('mode-fixed', prefs.layout === 'fixed');
   fieldEl.classList.toggle('mode-tabs', prefs.layout === 'tabs');
   fieldEl.classList.toggle('mode-dash', prefs.layout === 'dashboard');
+  fieldEl.classList.toggle('mode-chat', prefs.layout === 'chat');
   if (dashboardZoom && (prefs.layout !== 'dashboard' || !pens.has(dashboardZoom))) dashboardZoom = null;
   fieldEl.classList.toggle('mode-dash-zoom', prefs.layout === 'dashboard' && !!dashboardZoom);
   tabbarEl.classList.toggle('hidden', prefs.layout !== 'tabs');
@@ -577,6 +726,14 @@ function renderField() {
     if (!fieldEl.contains(welcomeEl)) fieldEl.appendChild(welcomeEl);
     welcomeEl.classList.toggle('hidden', order.length > 0);
     if (order.length && (!focusedId || !pens.has(focusedId))) setFocused(order[order.length - 1]);
+  } else if (prefs.layout === 'chat') {
+    if (order.length) {
+      fieldEl.appendChild(makeChatList());
+      for (const id of order) fieldEl.appendChild(pens.get(id).el);
+      if (!focusedId || !pens.has(focusedId)) setFocused(order[order.length - 1]);
+    }
+    if (!fieldEl.contains(welcomeEl)) fieldEl.appendChild(welcomeEl);
+    welcomeEl.classList.toggle('hidden', order.length > 0);
   } else if (prefs.layout === 'dashboard') {
     for (const id of order) {
       const pen = pens.get(id);
@@ -647,6 +804,9 @@ function renderField() {
   const dashCardsVisible = prefs.layout === 'dashboard' && !dashboardZoom && order.length > 0;
   if (dashCardsVisible) { updateDashCards(); if (!dashTimer) dashTimer = setInterval(updateDashCards, 700); }
   else if (dashTimer) { clearInterval(dashTimer); dashTimer = null; }
+  const chatVisible = prefs.layout === 'chat' && order.length > 0;
+  if (chatVisible) { updateChatRows(); if (!chatTimer) chatTimer = setInterval(updateChatRows, 1000); }
+  else if (chatTimer) { clearInterval(chatTimer); chatTimer = null; }
   requestAnimationFrame(refitAll);
 }
 
@@ -1091,6 +1251,7 @@ window.flock.onData(({ id, data }) => {
   const pen = pens.get(id);
   if (!pen) return;
   pen.lastData = performance.now();
+  pen.lastAt = Date.now();
   pen.term.write(data);
 });
 window.flock.onExit(({ id }) => { if (pens.has(id)) closePen(id); });

@@ -751,6 +751,200 @@ body.prefs-page {
   top: 39px;
 }
 
+/* --- Chat layout: a messages-style list on the left, one pen on the right --- */
+#field.mode-chat {
+  overflow: hidden;
+}
+
+/* Cells clip their contents; the list lets its + menu spill over the
+   terminal, and sits above it so the terminal doesn't paint over the menu */
+#field .chat-list {
+  overflow: visible;
+  z-index: 2;
+  /* Without clipping, the list would refuse to shrink below its longest
+     preview line */
+  min-width: 0;
+}
+
+.chat-list {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 250px;
+  height: 100%;
+  background: var(--bar-bg);
+  border-right: 1px solid var(--border);
+}
+
+/* The resizer is a pen's edge handle, but the list sits under the window's
+   drag region, so it has to opt out to catch the mouse */
+.chat-resizer {
+  -webkit-app-region: no-drag;
+}
+
+/* Sits under the traffic lights, so the strip above the search drags the window */
+.chat-list-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 40px 10px 10px;
+  -webkit-app-region: drag;
+}
+
+.chat-search {
+  -webkit-app-region: no-drag;
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 7px;
+  background: var(--input-bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  outline: none;
+}
+
+.chat-search::placeholder {
+  color: var(--text-muted);
+}
+
+/* Static, so the menu hangs from the list's left edge rather than the
+   button — anchored to the button it ran off the left of the window */
+.chat-list-head #add {
+  position: static;
+  flex: 0 0 auto;
+  min-width: 0;
+  height: auto;
+}
+
+.chat-list-head #add-btn {
+  margin: 0;
+}
+
+.chat-list-head #add-menu,
+.chat-list-head #add-menu.flip {
+  top: calc(100% - 4px);
+  left: 10px;
+  right: auto;
+}
+
+.chat-rows {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 8px 8px;
+}
+
+.chat-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px 9px 14px;
+  border-radius: 9px;
+  cursor: default;
+}
+
+.chat-row.hidden {
+  display: none;
+}
+
+.chat-row:hover {
+  background: var(--hover);
+}
+
+.chat-row.selected {
+  background: var(--accent);
+}
+
+/* The unread dot: the bell rang and nobody was looking */
+.chat-row.attention::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin-top: -3.5px;
+  border-radius: 50%;
+  background: var(--attention);
+}
+
+.chat-row.attention .chat-name {
+  font-weight: 700;
+}
+
+.chat-row.attention .chat-preview {
+  color: var(--text);
+}
+
+.chat-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-top {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.chat-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-time {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.chat-preview {
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-row.selected .chat-name,
+.chat-row.selected .chat-time,
+.chat-row.selected .chat-preview {
+  color: var(--accent-text);
+}
+
+#field.mode-chat .pen {
+  display: none;
+}
+
+#field.mode-chat .pen.focused {
+  display: flex;
+  flex: 1;
+  width: auto !important;
+  min-width: 0;
+  height: 100%;
+  border-right: none;
+}
+
+/* The list already clears the traffic lights */
+#field.mode-chat .pen.is-first .pen-header {
+  padding-left: 12px;
+}
+
+#field.mode-chat .pen .pen-resizer {
+  display: none;
+}
+
 /* --- Dashboard layout: a card per terminal, click in, back out --- */
 #field.mode-dash {
   display: grid;
@@ -1139,7 +1333,8 @@ body.focus-mode #tabbar .pen-header.busy {
 }
 
 .grid-size select,
-#font-choice {
+#font-choice,
+#chat-agent {
   padding: 4px 8px;
   font-size: 12px;
   font-family: inherit;

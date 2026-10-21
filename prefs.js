@@ -11,6 +11,7 @@ const gridColsEl = document.getElementById('grid-cols');
 const fontChoiceEl = document.getElementById('font-choice');
 const lineHeightEl = document.getElementById('line-height');
 const showActivityEl = document.getElementById('show-activity');
+const chatAgentEl = document.getElementById('chat-agent');
 
 const prefs = {
   theme: 'fleece',
@@ -21,6 +22,7 @@ const prefs = {
   lineHeight: 1,
   dashView: 'cards',
   showActivity: false,
+  chatAgent: 'none',
   recentFolders: [],
 };
 
@@ -72,6 +74,7 @@ function syncPrefsUI() {
   fontChoiceEl.value = prefs.fontFamily;
   lineHeightEl.value = String(prefs.lineHeight);
   showActivityEl.checked = prefs.showActivity;
+  chatAgentEl.value = prefs.chatAgent;
 }
 
 customFieldsEl.querySelectorAll('input[data-var]').forEach((inp) => {
@@ -92,6 +95,7 @@ gridColsEl.addEventListener('change', () => { prefs.grid.cols = +gridColsEl.valu
 fontChoiceEl.addEventListener('change', () => { prefs.fontFamily = fontChoiceEl.value; persist(); });
 lineHeightEl.addEventListener('change', () => { prefs.lineHeight = Number(lineHeightEl.value); persist(); });
 showActivityEl.addEventListener('change', () => { prefs.showActivity = showActivityEl.checked; persist(); });
+chatAgentEl.addEventListener('change', () => { prefs.chatAgent = chatAgentEl.value; persist(); });
 
 // Changes made in the flock window or by hand-editing the config file
 window.flock.onPrefsChanged((saved) => {
