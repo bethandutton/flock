@@ -529,14 +529,11 @@ function updateDashCards() {
   }
 }
 
-function makeEmptyCell() {
+// New pens always fill the first gap, so only that one carries the + button
+function makeEmptyCell(withAdd) {
   const empty = document.createElement('div');
   empty.className = 'cell-empty';
-  empty.innerHTML = `
-    <button class="topbar-btn cell-new" type="button">New</button>
-    <button class="topbar-btn secondary cell-open" type="button">Open</button>`;
-  empty.querySelector('.cell-new').addEventListener('click', () => addPen());
-  empty.querySelector('.cell-open').addEventListener('click', () => openFolder());
+  if (withAdd) empty.appendChild(addEl);
   return empty;
 }
 
@@ -638,7 +635,7 @@ function renderField() {
       cell.className = 'cell';
       const id = order[i];
       if (id) cell.appendChild(pens.get(id).el);
-      else cell.appendChild(makeEmptyCell());
+      else cell.appendChild(makeEmptyCell(i === order.length));
       fieldEl.appendChild(cell);
     }
   }

@@ -1075,15 +1075,12 @@ body.focus-mode #tabbar .pen-header.busy {
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
 }
 
-.cell-empty .topbar-btn {
-  margin-left: 0;
-  height: 30px;
-  padding: 0 18px;
+/* The + sits where a pen's header would be */
+.cell-empty #add {
+  flex: 0 0 38px;
+  height: 38px;
 }
 
 /* --- Preferences: layout + general --- */
@@ -1451,6 +1448,3 @@ body.focus-mode #tabbar .pen-header.busy {
   -webkit-app-region: drag;
 }
 
-.cell-empty .topbar-btn {
-  -webkit-app-region: no-drag;
-}
