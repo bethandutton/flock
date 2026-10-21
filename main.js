@@ -257,12 +257,32 @@ function watchPrefsFile() {
 
 /* ----------------------------- Terminals -------------------------------- */
 
+/* If Flock was started from inside a Claude Code session, that session's
+   markers ride along into every shell, and a Claude started there thinks
+   it's a helper session and stops saving its history. Shells start clean. */
+const INHERITED_SESSION = /^(CLAUDECODE|CLAUDE_PID|CLAUDE_EFFORT|CLAUDE_CODE_(ENTRYPOINT|EXECPATH|CHILD_SESSION|SESSION_.*|MESSAGING_.*|SSE_PORT))$/;
+
+/* Apps opened from the Dock get no locale, so shells fall back to plain
+   ASCII and mangle dashes and other non-ASCII text. Terminal.app sets one
+   from the Mac's region; do the same. */
+function shellLocale() {
+  if (process.env.LANG) return process.env.LANG;
+  const region = Intl.DateTimeFormat().resolvedOptions().locale;
+  return /^[a-z]{2}-[A-Z]{2}$/.test(region) ? `${region.replace('-', '_')}.UTF-8` : 'en_US.UTF-8';
+}
+
+function shellEnv() {
+  const env = {};
+  for (const [k, v] of Object.entries(process.env)) if (!INHERITED_SESSION.test(k)) env[k] = v;
+  return { ...env, LANG: shellLocale(), TERM: 'xterm-256color', COLORTERM: 'truecolor', TERM_PROGRAM: 'Flock' };
+}
+
 ipcMain.handle('pty-create', (event, { id, cols, rows, cwd }) => {
   const opts = {
     name: 'xterm-256color',
     cols: cols || 80,
     rows: rows || 24,
-    env: { ...process.env, TERM: 'xterm-256color', COLORTERM: 'truecolor', TERM_PROGRAM: 'Flock' },
+    env: shellEnv(),
   };
   let term;
   try {
